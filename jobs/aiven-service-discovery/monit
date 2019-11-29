@@ -1,0 +1,6 @@
+check process aiven-service-discovery
+  with pidfile /var/vcap/sys/run/bpm/aiven-service-discovery/aiven-service-discovery.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start aiven-service-discovery"
+    with timeout 60 seconds
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop aiven-service-discovery"
+  group vcap

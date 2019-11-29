@@ -1,0 +1,16 @@
+---
+processes:
+  - name: aiven-service-discovery
+
+    executable: /var/vcap/packages/aiven-service-discovery/bin/aiven-service-discovery
+    args:
+      - --aiven-project
+      - '<%= p('aiven.project') %>'
+      - --aiven-api-token
+      - '<%= p('aiven.api_token') %>'
+      - --target-path
+      - '<%= p('target_path') %>/<%= p('target_filename') %>'
+
+    additional_volumes:
+      - path: <%= p('target_path') %>
+        writable: true
