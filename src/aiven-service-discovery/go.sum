@@ -1,0 +1,5 @@
+code.cloudfoundry.org/lager v2.0.0+incompatible h1:WZwDKDB2PLd/oL+USK4b4aEjUymIej9My2nUQ9oWEwQ=
+code.cloudfoundry.org/lager v2.0.0+incompatible/go.mod h1:O2sS7gKP3HM2iemG+EnwvyNQK7pTSC6Foi4QiMp9sSk=
+github.com/aiven/aiven-go-client v1.2.0 h1:DPDfECyWsePZIqjNY8TFNmePZ6nXlHo9jCd8sZy7s3M=
+github.com/aiven/aiven-go-client v1.2.0/go.mod h1:phPZQfMS04VejuQmsPzYur40GeP4IODyhbyUBiGm/9s=
+github.com/alphagov/paas-observability-release v0.0.0-20190902160654-ce08d771ea78 h1:DNx6AXfR1paWZh71Q4Kuf/ncpVruAMfuDMFvbaBVB7A=
