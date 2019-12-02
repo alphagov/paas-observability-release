@@ -8,7 +8,9 @@ processes:
       - '<%= p('aiven.project') %>'
       - --aiven-api-token
       - '<%= p('aiven.api_token') %>'
-      - --target-path
+      - --aiven-prometheus-endpoint-id
+      - '<%= p('aiven.prometheus_endpoint_id') %>'
+      - --service-discovery-target-path
       - '<%= p('target_path') %>/<%= p('target_filename') %>'
 
     additional_volumes:

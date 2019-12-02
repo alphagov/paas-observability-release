@@ -16,6 +16,9 @@ properties:
   aiven.api_token:
     description: 'The Aiven.io API token for API authentication'
 
+  aiven.prometheus_endpoint_id:
+    description: 'The Aiven.io Prometheus Service Integration Endpoint ID'
+
   target_path:
     description: 'Directory path where the targets will be written, see target_filename'
     default: '/var/vcap/store/aiven-service-discovery/discovery'
