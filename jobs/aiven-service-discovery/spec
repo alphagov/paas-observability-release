@@ -1,0 +1,28 @@
+---
+name: aiven-service-discovery
+
+description: 'Uses the Aiven.io API to produce a list of Prometheus targets to scrape'
+
+templates:
+  bpm.yml.erb: config/bpm.yml
+
+packages:
+  - aiven-service-discovery
+
+properties:
+  aiven.project:
+    description: 'The Aiven.io project for which to produce a list of targets'
+
+  aiven.api_token:
+    description: 'The Aiven.io API token for API authentication'
+
+  aiven.prometheus_endpoint_id:
+    description: 'The Aiven.io Prometheus Service Integration Endpoint ID'
+
+  target_path:
+    description: 'Directory path where the targets will be written, see target_filename'
+    default: '/var/vcap/store/aiven-service-discovery/discovery'
+
+  target_filename:
+    description: 'Filename where the targets will be written'
+    default: 'targets.json'

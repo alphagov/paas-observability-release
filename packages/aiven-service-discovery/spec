@@ -1,0 +1,8 @@
+---
+name: aiven-service-discovery
+
+dependencies:
+  - golang
+
+files:
+  - aiven-service-discovery/**/*
