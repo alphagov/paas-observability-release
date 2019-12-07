@@ -6,7 +6,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
 )
@@ -34,8 +33,7 @@ type integrator struct {
 
 	fetcher f.Fetcher
 
-	logger   lager.Logger
-	registry *prometheus.Registry
+	logger lager.Logger
 
 	stop chan struct{}
 	wg   sync.WaitGroup
@@ -51,8 +49,6 @@ func NewIntegrator(
 	fetcher f.Fetcher,
 
 	logger lager.Logger,
-
-	registry *prometheus.Registry,
 ) (Integrator, error) {
 	lsession := logger.Session("integrator", lager.Data{"project": aivenProject})
 
@@ -69,8 +65,7 @@ func NewIntegrator(
 
 		fetcher: fetcher,
 
-		logger:   lsession,
-		registry: registry,
+		logger: lsession,
 
 		stop: make(chan struct{}),
 

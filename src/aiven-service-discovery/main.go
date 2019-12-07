@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/prometheus/client_golang/prometheus"
 
 	d "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/discoverer"
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
@@ -25,8 +24,6 @@ var (
 	aivenProject               string
 	aivenPrometheusEndpointID  string
 	serviceDiscoveryTargetPath string
-
-	registry *prometheus.Registry
 )
 
 func main() {
@@ -57,7 +54,7 @@ func main() {
 
 	fetcher, err := f.NewFetcher(
 		aivenProject, aivenAPIToken,
-		logger, registry,
+		logger,
 	)
 	if err != nil {
 		log.Fatalf("Could not create fetcher: %s", err)
@@ -66,7 +63,7 @@ func main() {
 	integrator, err := i.NewIntegrator(
 		aivenProject, aivenAPIToken, aivenPrometheusEndpointID,
 		fetcher,
-		logger, registry,
+		logger,
 	)
 	if err != nil {
 		log.Fatalf("Could not create integrator: %s", err)
@@ -75,7 +72,7 @@ func main() {
 	discoverer, err := d.NewDiscoverer(
 		aivenProject, serviceDiscoveryTargetPath,
 		fetcher, r.NewResolver(),
-		logger, registry,
+		logger,
 	)
 	if err != nil {
 		log.Fatalf("Could not create discoverer: %s", err)

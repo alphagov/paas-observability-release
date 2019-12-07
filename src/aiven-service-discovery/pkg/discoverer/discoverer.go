@@ -9,7 +9,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
 	r "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/resolver"
@@ -39,8 +38,7 @@ type discoverer struct {
 	fetcher  f.Fetcher
 	resolver r.Resolver
 
-	logger   lager.Logger
-	registry *prometheus.Registry
+	logger lager.Logger
 
 	stop chan struct{}
 	wg   sync.WaitGroup
@@ -56,7 +54,6 @@ func NewDiscoverer(
 	resolver r.Resolver,
 
 	logger lager.Logger,
-	registry *prometheus.Registry,
 ) (Discoverer, error) {
 	lsession := logger.Session("discoverer", lager.Data{"project": aivenProject})
 
@@ -67,8 +64,7 @@ func NewDiscoverer(
 		fetcher:  fetcher,
 		resolver: resolver,
 
-		logger:   lsession,
-		registry: registry,
+		logger: lsession,
 
 		stop: make(chan struct{}),
 

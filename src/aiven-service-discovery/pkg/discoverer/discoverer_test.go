@@ -12,7 +12,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/discoverer"
 	fetcherfakes "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher/fakes"
@@ -38,8 +37,7 @@ var _ = Describe("Discoverer", func() {
 
 		target string
 
-		logger   lager.Logger
-		registry *prometheus.Registry
+		logger lager.Logger
 
 		discovererDNSDiscoveryErrorsTotal float64
 		discovererDNSDiscoveriesTotal     float64
@@ -65,7 +63,7 @@ var _ = Describe("Discoverer", func() {
 		d, err = discoverer.NewDiscoverer(
 			project, target,
 			f, r,
-			logger, registry,
+			logger,
 		)
 		Expect(err).NotTo(HaveOccurred())
 

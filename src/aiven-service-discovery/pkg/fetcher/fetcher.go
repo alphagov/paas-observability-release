@@ -6,7 +6,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 func init() {
@@ -31,8 +30,7 @@ type fetcher struct {
 	aivenProject string
 	aivenClient  aiven.Client
 
-	logger   lager.Logger
-	registry *prometheus.Registry
+	logger lager.Logger
 
 	stop chan struct{}
 	wg   sync.WaitGroup
@@ -48,8 +46,6 @@ func NewFetcher(
 	aivenAPIToken string,
 
 	logger lager.Logger,
-
-	registry *prometheus.Registry,
 ) (Fetcher, error) {
 	lsession := logger.Session("fetcher", lager.Data{"project": aivenProject})
 
@@ -63,8 +59,7 @@ func NewFetcher(
 		aivenProject: aivenProject,
 		aivenClient:  *aivenClient,
 
-		logger:   lsession,
-		registry: registry,
+		logger: lsession,
 
 		stop: make(chan struct{}),
 

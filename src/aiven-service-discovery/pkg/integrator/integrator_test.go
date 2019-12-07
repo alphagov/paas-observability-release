@@ -12,7 +12,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher/fakes"
 	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/integrator"
@@ -36,8 +35,7 @@ var _ = Describe("Integrator", func() {
 		i integrator.Integrator
 		f *fakes.FakeFetcher
 
-		logger   lager.Logger
-		registry *prometheus.Registry
+		logger lager.Logger
 
 		integratorCreateServiceIntegrationErrorsTotal float64
 		integratorCreateServiceIntegrationsTotal      float64
@@ -64,7 +62,7 @@ var _ = Describe("Integrator", func() {
 		i, err = integrator.NewIntegrator(
 			project, token, endpoint,
 			f,
-			logger, registry,
+			logger,
 		)
 		Expect(err).NotTo(HaveOccurred())
 
