@@ -9,6 +9,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+func init() {
+	initMetrics()
+}
+
 const (
 	defaultInterval = 120 * time.Second
 	userAgent       = "govuk-paas-aiven-service-discovery-fetcher"
@@ -82,9 +86,12 @@ func (f *fetcher) fetch() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
+	FetcherFetchesTotal.Inc()
+
 	aivenServices, err := f.aivenClient.Services.List(f.aivenProject)
 	if err != nil {
 		lsession.Error("err-aiven-services-list", err)
+		FetcherAivenListServicesErrorsTotal.Inc()
 		return
 	}
 

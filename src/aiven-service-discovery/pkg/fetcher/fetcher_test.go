@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
+	h "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/testhelpers"
 )
 
 const (
@@ -30,6 +31,9 @@ var _ = Describe("Fetcher", func() {
 		f        fetcher.Fetcher
 		logger   lager.Logger
 		registry *prometheus.Registry
+
+		fetchAivenListServicesErrorsTotal float64
+		fetchesTotal                      float64
 	)
 
 	BeforeSuite(func() {
@@ -53,6 +57,14 @@ var _ = Describe("Fetcher", func() {
 
 		By("checking before starting")
 		Expect(f.Services()).To(HaveLen(0))
+
+		By("setting the metric values before each test")
+		fetchesTotal = h.CurrentMetricValue(
+			fetcher.FetcherFetchesTotal,
+		)
+		fetchAivenListServicesErrorsTotal = h.CurrentMetricValue(
+			fetcher.FetcherAivenListServicesErrorsTotal,
+		)
 
 		f.SetInterval(100 * time.Millisecond) // We want fast tests
 
@@ -104,6 +116,14 @@ var _ = Describe("Fetcher", func() {
 		Eventually(f.Services, evTimeout, evInterval).Should(HaveLen(1))
 		Eventually(f.Services, evTimeout, evInterval).Should(HaveLen(2))
 		Eventually(f.Services, evTimeout, evInterval).Should(HaveLen(0))
+
+		By("checking the metrics")
+		Expect(fetcher.FetcherFetchesTotal).To(
+			h.MetricIncrementedBy(fetchesTotal, ">=", 3),
+		)
+		Expect(fetcher.FetcherAivenListServicesErrorsTotal).To(
+			h.MetricIncrementedBy(fetchAivenListServicesErrorsTotal, "==", 0),
+		)
 	})
 
 	It("should be resilient to errors", func() {
@@ -144,5 +164,13 @@ var _ = Describe("Fetcher", func() {
 		Eventually(f.Services, evTimeout, evInterval).Should(HaveLen(1))
 		Eventually(f.Services, evTimeout, evInterval).Should(HaveLen(2))
 		Eventually(f.Services, evTimeout, evInterval).Should(HaveLen(1))
+
+		By("checking the metrics")
+		Expect(fetcher.FetcherFetchesTotal).To(
+			h.MetricIncrementedBy(fetchesTotal, ">=", 6),
+		)
+		Expect(fetcher.FetcherAivenListServicesErrorsTotal).To(
+			h.MetricIncrementedBy(fetchAivenListServicesErrorsTotal, ">=", 1),
+		)
 	})
 })
