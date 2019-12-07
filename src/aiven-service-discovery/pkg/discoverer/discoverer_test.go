@@ -17,6 +17,7 @@ import (
 	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/discoverer"
 	fetcherfakes "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher/fakes"
 	resolverfakes "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/resolver/fakes"
+	h "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/testhelpers"
 )
 
 const (
@@ -39,6 +40,11 @@ var _ = Describe("Discoverer", func() {
 
 		logger   lager.Logger
 		registry *prometheus.Registry
+
+		discovererDNSDiscoveryErrorsTotal float64
+		discovererDNSDiscoveriesTotal     float64
+		discovererWriteTargetsErrorsTotal float64
+		discovererWriteTargetsTotal       float64
 	)
 
 	BeforeEach(func() {
@@ -64,6 +70,20 @@ var _ = Describe("Discoverer", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		d.SetInterval(100 * time.Millisecond) // We want fast tests
+
+		By("setting the metric values before each test")
+		discovererDNSDiscoveriesTotal = h.CurrentMetricValue(
+			discoverer.DiscovererDNSDiscoveriesTotal,
+		)
+		discovererDNSDiscoveryErrorsTotal = h.CurrentMetricValue(
+			discoverer.DiscovererDNSDiscoveryErrorsTotal,
+		)
+		discovererWriteTargetsTotal = h.CurrentMetricValue(
+			discoverer.DiscovererWriteTargetsTotal,
+		)
+		discovererWriteTargetsErrorsTotal = h.CurrentMetricValue(
+			discoverer.DiscovererWriteTargetsErrorsTotal,
+		)
 	})
 
 	AfterEach(func() {
@@ -213,6 +233,20 @@ var _ = Describe("Discoverer", func() {
 			contents, _ := ioutil.ReadFile(target)
 			return contents
 		}, evTimeout, evInterval).Should(MatchJSON(`[]`))
+
+		By("checking the metrics")
+		Expect(discoverer.DiscovererDNSDiscoveriesTotal).To(
+			h.MetricIncrementedBy(discovererDNSDiscoveriesTotal, ">=", 3),
+		)
+		Expect(discoverer.DiscovererDNSDiscoveryErrorsTotal).To(
+			h.MetricIncrementedBy(discovererDNSDiscoveryErrorsTotal, "==", 0),
+		)
+		Expect(discoverer.DiscovererWriteTargetsTotal).To(
+			h.MetricIncrementedBy(discovererWriteTargetsTotal, ">=", 1),
+		)
+		Expect(discoverer.DiscovererWriteTargetsErrorsTotal).To(
+			h.MetricIncrementedBy(discovererWriteTargetsErrorsTotal, "==", 0),
+		)
 	})
 
 	It("should be resilient to errors", func() {
@@ -264,5 +298,19 @@ var _ = Describe("Discoverer", func() {
 				"aiven_node_count": "3"
 			}
 		}]`))
+
+		By("checking the metrics")
+		Expect(discoverer.DiscovererDNSDiscoveriesTotal).To(
+			h.MetricIncrementedBy(discovererDNSDiscoveriesTotal, ">=", 3),
+		)
+		Expect(discoverer.DiscovererDNSDiscoveryErrorsTotal).To(
+			h.MetricIncrementedBy(discovererDNSDiscoveryErrorsTotal, ">=", 1),
+		)
+		Expect(discoverer.DiscovererWriteTargetsTotal).To(
+			h.MetricIncrementedBy(discovererWriteTargetsTotal, ">=", 1),
+		)
+		Expect(discoverer.DiscovererWriteTargetsErrorsTotal).To(
+			h.MetricIncrementedBy(discovererWriteTargetsErrorsTotal, "==", 0),
+		)
 	})
 })
