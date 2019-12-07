@@ -16,6 +16,7 @@ import (
 
 	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher/fakes"
 	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/integrator"
+	h "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/testhelpers"
 )
 
 const (
@@ -32,10 +33,14 @@ const (
 
 var _ = Describe("Integrator", func() {
 	var (
-		i        integrator.Integrator
-		f        *fakes.FakeFetcher
+		i integrator.Integrator
+		f *fakes.FakeFetcher
+
 		logger   lager.Logger
 		registry *prometheus.Registry
+
+		integratorCreateServiceIntegrationErrorsTotal float64
+		integratorCreateServiceIntegrationsTotal      float64
 	)
 
 	BeforeSuite(func() {
@@ -64,6 +69,14 @@ var _ = Describe("Integrator", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		i.SetInterval(100 * time.Millisecond) // We want fast tests
+
+		By("setting the metric values before each test")
+		integratorCreateServiceIntegrationErrorsTotal = h.CurrentMetricValue(
+			integrator.IntegratorCreateServiceIntegrationErrorsTotal,
+		)
+		integratorCreateServiceIntegrationsTotal = h.CurrentMetricValue(
+			integrator.IntegratorCreateServiceIntegrationsTotal,
+		)
 	})
 
 	AfterEach(func() {
@@ -143,6 +156,14 @@ var _ = Describe("Integrator", func() {
 			},
 		})
 		Consistently(httpmock.GetTotalCallCount, ctlyTimeout, ctlyInterval).Should(Equal(2))
+
+		By("checking the metrics")
+		Expect(integrator.IntegratorCreateServiceIntegrationsTotal).To(
+			h.MetricIncrementedBy(integratorCreateServiceIntegrationsTotal, ">=", 2),
+		)
+		Expect(integrator.IntegratorCreateServiceIntegrationErrorsTotal).To(
+			h.MetricIncrementedBy(integratorCreateServiceIntegrationErrorsTotal, "==", 0),
+		)
 	})
 
 	It("should be resilient to errors", func() {
@@ -184,6 +205,14 @@ var _ = Describe("Integrator", func() {
 		By("polling for it to create the service integration after some errors")
 		Eventually(func() int { return creations }, evTimeout, evInterval).Should(Equal(1))
 		Expect(httpmock.GetTotalCallCount()).To(BeNumerically(">=", 5))
+
+		By("checking the metrics")
+		Expect(integrator.IntegratorCreateServiceIntegrationsTotal).To(
+			h.MetricIncrementedBy(integratorCreateServiceIntegrationsTotal, ">=", 1),
+		)
+		Expect(integrator.IntegratorCreateServiceIntegrationErrorsTotal).To(
+			h.MetricIncrementedBy(integratorCreateServiceIntegrationErrorsTotal, ">=", 1),
+		)
 	})
 
 	It("should not create service integrations for ineligible services", func() {
@@ -210,5 +239,13 @@ var _ = Describe("Integrator", func() {
 
 		By("polling for it to do nothing for ineligible services")
 		Consistently(httpmock.GetTotalCallCount, ctlyTimeout, ctlyInterval).Should(Equal(0))
+
+		By("checking the metrics")
+		Expect(integrator.IntegratorCreateServiceIntegrationsTotal).To(
+			h.MetricIncrementedBy(integratorCreateServiceIntegrationsTotal, "==", 0),
+		)
+		Expect(integrator.IntegratorCreateServiceIntegrationErrorsTotal).To(
+			h.MetricIncrementedBy(integratorCreateServiceIntegrationErrorsTotal, "==", 0),
+		)
 	})
 })

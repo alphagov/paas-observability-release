@@ -11,6 +11,10 @@ import (
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
 )
 
+func init() {
+	initMetrics()
+}
+
 const (
 	defaultInterval = 15 * time.Second
 	userAgent       = "govuk-paas-aiven-service-discovery-integrator"
@@ -83,6 +87,8 @@ func (i *integrator) integrateService(s aiven.Service) {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
+	IntegratorCreateServiceIntegrationsTotal.Inc()
+
 	_, err := i.aivenClient.ServiceIntegrations.Create(
 		i.aivenProject,
 		aiven.CreateServiceIntegrationRequest{
@@ -94,6 +100,8 @@ func (i *integrator) integrateService(s aiven.Service) {
 
 	if err != nil {
 		lsession.Error("err-aiven-create-service-integration", err)
+
+		IntegratorCreateServiceIntegrationErrorsTotal.Inc()
 	}
 }
 
