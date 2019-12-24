@@ -12,6 +12,8 @@ processes:
       - '<%= p('aiven.prometheus_endpoint_id') %>'
       - --service-discovery-target-path
       - '<%= p('target_path') %>/<%= p('target_filename') %>'
+      - --prometheus-listen-port
+      - '<%= p('prometheus_listen_port') %>'
 
     additional_volumes:
       - path: <%= p('target_path') %>

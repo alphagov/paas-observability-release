@@ -26,3 +26,7 @@ properties:
   target_filename:
     description: 'Filename where the targets will be written'
     default: 'targets.json'
+
+  prometheus_listen_port:
+    description: 'Port on which prometheus metrics will be exposed via /metrics'
+    default: 9274
