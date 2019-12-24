@@ -9,11 +9,14 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
 	r "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/resolver"
 )
+
+func init() {
+	initMetrics()
+}
 
 const (
 	defaultInterval         = 45 * time.Second
@@ -35,8 +38,7 @@ type discoverer struct {
 	fetcher  f.Fetcher
 	resolver r.Resolver
 
-	logger   lager.Logger
-	registry *prometheus.Registry
+	logger lager.Logger
 
 	stop chan struct{}
 	wg   sync.WaitGroup
@@ -52,7 +54,6 @@ func NewDiscoverer(
 	resolver r.Resolver,
 
 	logger lager.Logger,
-	registry *prometheus.Registry,
 ) (Discoverer, error) {
 	lsession := logger.Session("discoverer", lager.Data{"project": aivenProject})
 
@@ -63,8 +64,7 @@ func NewDiscoverer(
 		fetcher:  fetcher,
 		resolver: resolver,
 
-		logger:   lsession,
-		registry: registry,
+		logger: lsession,
 
 		stop: make(chan struct{}),
 
@@ -84,11 +84,17 @@ func (d *discoverer) goPerformDNSDiscovery(
 	lsession := d.logger.Session("go-perform-dns-discovery")
 
 	for _, service := range services {
+
+		DiscovererDNSDiscoveriesTotal.Inc()
+
 		hostname, err := service.Hostname()
 		if err != nil {
 			lsession.Error(
 				"err-aiven-get-hostname", err, lager.Data{"service": service.Name},
 			)
+
+			DiscovererDNSDiscoveryErrorsTotal.Inc()
+
 			continue
 		}
 
@@ -97,6 +103,9 @@ func (d *discoverer) goPerformDNSDiscovery(
 			lsession.Error(
 				"err-resolve", err, lager.Data{"service": service.Name},
 			)
+
+			DiscovererDNSDiscoveryErrorsTotal.Inc()
+
 			continue
 		}
 
@@ -148,6 +157,8 @@ func (d *discoverer) writeTargets(targets []prometheusTargetConfig) {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
+	DiscovererWriteTargetsTotal.Inc()
+
 	targetsAsJSON, err := json.Marshal(targets)
 
 	if err != nil {
@@ -155,6 +166,9 @@ func (d *discoverer) writeTargets(targets []prometheusTargetConfig) {
 			"err-marshal-json-targets",
 			err, lager.Data{"targets": targets, "target-path": d.targetPath},
 		)
+
+		DiscovererWriteTargetsErrorsTotal.Inc()
+
 		return
 	}
 
@@ -164,6 +178,9 @@ func (d *discoverer) writeTargets(targets []prometheusTargetConfig) {
 			"err-write-json-targets",
 			err, lager.Data{"target": d.targetPath},
 		)
+
+		DiscovererWriteTargetsErrorsTotal.Inc()
+
 		return
 	}
 }
@@ -199,12 +216,11 @@ func (d *discoverer) loop() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
-	ticker := time.NewTicker(d.interval)
 	d.wg.Add(1)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-time.After(d.interval):
 			d.discoverAndWrite()
 		case <-d.stop:
 			d.wg.Done()

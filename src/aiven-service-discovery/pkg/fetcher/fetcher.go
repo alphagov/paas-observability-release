@@ -6,8 +6,11 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 )
+
+func init() {
+	initMetrics()
+}
 
 const (
 	defaultInterval = 120 * time.Second
@@ -27,8 +30,7 @@ type fetcher struct {
 	aivenProject string
 	aivenClient  aiven.Client
 
-	logger   lager.Logger
-	registry *prometheus.Registry
+	logger lager.Logger
 
 	stop chan struct{}
 	wg   sync.WaitGroup
@@ -44,8 +46,6 @@ func NewFetcher(
 	aivenAPIToken string,
 
 	logger lager.Logger,
-
-	registry *prometheus.Registry,
 ) (Fetcher, error) {
 	lsession := logger.Session("fetcher", lager.Data{"project": aivenProject})
 
@@ -59,8 +59,7 @@ func NewFetcher(
 		aivenProject: aivenProject,
 		aivenClient:  *aivenClient,
 
-		logger:   lsession,
-		registry: registry,
+		logger: lsession,
 
 		stop: make(chan struct{}),
 
@@ -82,9 +81,12 @@ func (f *fetcher) fetch() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
+	FetcherFetchesTotal.Inc()
+
 	aivenServices, err := f.aivenClient.Services.List(f.aivenProject)
 	if err != nil {
 		lsession.Error("err-aiven-services-list", err)
+		FetcherAivenListServicesErrorsTotal.Inc()
 		return
 	}
 
@@ -108,12 +110,11 @@ func (f *fetcher) loop() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
-	ticker := time.NewTicker(f.interval)
 	f.wg.Add(1)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-time.After(f.interval):
 			f.fetch()
 		case <-f.stop:
 			f.wg.Done()

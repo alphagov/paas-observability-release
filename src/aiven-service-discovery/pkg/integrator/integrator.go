@@ -6,10 +6,13 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	aiven "github.com/aiven/aiven-go-client"
-	"github.com/prometheus/client_golang/prometheus"
 
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
 )
+
+func init() {
+	initMetrics()
+}
 
 const (
 	defaultInterval = 15 * time.Second
@@ -30,8 +33,7 @@ type integrator struct {
 
 	fetcher f.Fetcher
 
-	logger   lager.Logger
-	registry *prometheus.Registry
+	logger lager.Logger
 
 	stop chan struct{}
 	wg   sync.WaitGroup
@@ -47,8 +49,6 @@ func NewIntegrator(
 	fetcher f.Fetcher,
 
 	logger lager.Logger,
-
-	registry *prometheus.Registry,
 ) (Integrator, error) {
 	lsession := logger.Session("integrator", lager.Data{"project": aivenProject})
 
@@ -65,8 +65,7 @@ func NewIntegrator(
 
 		fetcher: fetcher,
 
-		logger:   lsession,
-		registry: registry,
+		logger: lsession,
 
 		stop: make(chan struct{}),
 
@@ -83,6 +82,8 @@ func (i *integrator) integrateService(s aiven.Service) {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
+	IntegratorCreateServiceIntegrationsTotal.Inc()
+
 	_, err := i.aivenClient.ServiceIntegrations.Create(
 		i.aivenProject,
 		aiven.CreateServiceIntegrationRequest{
@@ -94,6 +95,8 @@ func (i *integrator) integrateService(s aiven.Service) {
 
 	if err != nil {
 		lsession.Error("err-aiven-create-service-integration", err)
+
+		IntegratorCreateServiceIntegrationErrorsTotal.Inc()
 	}
 }
 
@@ -136,12 +139,11 @@ func (i *integrator) loop() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
-	ticker := time.NewTicker(i.interval)
 	i.wg.Add(1)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-time.After(i.interval):
 			i.integrate()
 		case <-i.stop:
 			i.wg.Done()
