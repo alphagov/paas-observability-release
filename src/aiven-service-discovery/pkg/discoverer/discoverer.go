@@ -216,12 +216,11 @@ func (d *discoverer) loop() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
-	ticker := time.NewTicker(d.interval)
 	d.wg.Add(1)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-time.After(d.interval):
 			d.discoverAndWrite()
 		case <-d.stop:
 			d.wg.Done()

@@ -139,12 +139,11 @@ func (i *integrator) loop() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
-	ticker := time.NewTicker(i.interval)
 	i.wg.Add(1)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-time.After(i.interval):
 			i.integrate()
 		case <-i.stop:
 			i.wg.Done()

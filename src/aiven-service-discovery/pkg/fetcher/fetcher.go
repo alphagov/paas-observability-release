@@ -110,12 +110,11 @@ func (f *fetcher) loop() {
 	lsession.Info("begin")
 	defer lsession.Info("end")
 
-	ticker := time.NewTicker(f.interval)
 	f.wg.Add(1)
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-time.After(f.interval):
 			f.fetch()
 		case <-f.stop:
 			f.wg.Done()
