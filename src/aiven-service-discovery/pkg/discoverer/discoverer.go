@@ -115,6 +115,7 @@ func (d *discoverer) goPerformDNSDiscovery(
 				ServiceType: service.Type,
 				Hostname:    hostname,
 				Plan:        service.Plan,
+				Cloud:       service.CloudName,
 				NodeCount:   fmt.Sprintf("%d", service.NodeCount),
 			},
 			Targets: ips,

@@ -111,6 +111,7 @@ var _ = Describe("Discoverer", func() {
 				Name:      "a-service",
 				Type:      "elasticsearch",
 				Plan:      "tiny-6.x",
+				CloudName: "aws-eu-west-1",
 				NodeCount: 3,
 				URIParams: map[string]string{"host": "an-instance.aivencloud.com"},
 				Integrations: []*aiven.ServiceIntegration{
@@ -131,6 +132,7 @@ var _ = Describe("Discoverer", func() {
 				"aiven_service_type": "elasticsearch",
 				"aiven_hostname": "an-instance.aivencloud.com",
 				"aiven_plan": "tiny-6.x",
+				"aiven_cloud": "aws-eu-west-1",
 				"aiven_node_count": "3"
 			}
 		}]`))
@@ -148,6 +150,7 @@ var _ = Describe("Discoverer", func() {
 				"aiven_service_type": "elasticsearch",
 				"aiven_hostname": "an-instance.aivencloud.com",
 				"aiven_plan": "tiny-6.x",
+				"aiven_cloud": "aws-eu-west-1",
 				"aiven_node_count": "3"
 			}
 		}]`))
@@ -157,6 +160,7 @@ var _ = Describe("Discoverer", func() {
 				Name:      "a-service",
 				Type:      "elasticsearch",
 				Plan:      "tiny-6.x",
+				CloudName: "aws-eu-west-1",
 				NodeCount: 3,
 				URIParams: map[string]string{"host": "an-instance.aivencloud.com"},
 				Integrations: []*aiven.ServiceIntegration{
@@ -167,6 +171,7 @@ var _ = Describe("Discoverer", func() {
 				Name:      "another-service",
 				Type:      "elasticsearch",
 				Plan:      "tiny-7.x",
+				CloudName: "aws-eu-west-1",
 				NodeCount: 2,
 				URIParams: map[string]string{"host": "another-instance.aivencloud.com"},
 				Integrations: []*aiven.ServiceIntegration{
@@ -186,6 +191,7 @@ var _ = Describe("Discoverer", func() {
 				"aiven_service_type": "elasticsearch",
 				"aiven_hostname": "an-instance.aivencloud.com",
 				"aiven_plan": "tiny-6.x",
+				"aiven_cloud": "aws-eu-west-1",
 				"aiven_node_count": "3"
 			}
 		}, {
@@ -195,6 +201,7 @@ var _ = Describe("Discoverer", func() {
 				"aiven_service_type": "elasticsearch",
 				"aiven_hostname": "another-instance.aivencloud.com",
 				"aiven_plan": "tiny-7.x",
+				"aiven_cloud": "aws-eu-west-1",
 				"aiven_node_count": "2"
 			}
 		}]`), MatchJSON(`[{
@@ -204,6 +211,7 @@ var _ = Describe("Discoverer", func() {
 				"aiven_service_type": "elasticsearch",
 				"aiven_hostname": "another-instance.aivencloud.com",
 				"aiven_plan": "tiny-7.x",
+				"aiven_cloud": "aws-eu-west-1",
 				"aiven_node_count": "2"
 			}
 		}, {
@@ -213,6 +221,7 @@ var _ = Describe("Discoverer", func() {
 				"aiven_service_type": "elasticsearch",
 				"aiven_hostname": "an-instance.aivencloud.com",
 				"aiven_plan": "tiny-6.x",
+				"aiven_cloud": "aws-eu-west-1",
 				"aiven_node_count": "3"
 			}
 		}]`)))
@@ -265,6 +274,7 @@ var _ = Describe("Discoverer", func() {
 				Name:      "a-service",
 				Type:      "elasticsearch",
 				Plan:      "tiny-6.x",
+				CloudName: "aws-eu-west-1",
 				NodeCount: 3,
 				URIParams: map[string]string{"host": "an-instance.aivencloud.com"},
 				Integrations: []*aiven.ServiceIntegration{
@@ -293,6 +303,7 @@ var _ = Describe("Discoverer", func() {
 				"aiven_service_type": "elasticsearch",
 				"aiven_hostname": "an-instance.aivencloud.com",
 				"aiven_plan": "tiny-6.x",
+				"aiven_cloud": "aws-eu-west-1",
 				"aiven_node_count": "3"
 			}
 		}]`))
