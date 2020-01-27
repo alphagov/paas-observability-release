@@ -1,0 +1,15 @@
+---
+name: coredns
+
+description: 'DNS server with various plugins and middlewares'
+
+templates:
+  bpm.yml.erb: config/bpm.yml
+  Corefile.erb: config/Corefile
+
+packages:
+  - coredns
+
+properties:
+  corefile:
+    description: 'The text file configuring how Coredns will run'

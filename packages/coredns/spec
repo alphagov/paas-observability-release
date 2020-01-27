@@ -1,0 +1,8 @@
+---
+name: coredns
+
+dependencies:
+  - golang
+
+files:
+  - coredns/**
