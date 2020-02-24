@@ -16,17 +16,17 @@ processes:
       - --lookback-duration
       - '<%= p('lookback_duration') %>'
 
+      - --prometheus-listen-port
+      - '<%= p('prometheus_listen_port') %>'
+
       - --bosh-client-id
       - '<%= p('collector.bosh_client_id') %>'
 
       - --bosh-client-secret
       - '<%= p('collector.bosh_client_secret') %>'
 
-      - --prometheus-listen-port
-      - '<%= p('prometheus_listen_port') %>'
-
-      - --shippers-splunk-hec-endpoint
+      - --splunk-hec-endpoint
       - '<%= p('shippers.splunk.hec_endpoint') %>'
 
-      - --shippers-splunk-token
+      - --splunk-token
       - '<%= p('shippers.splunk.token') %>'

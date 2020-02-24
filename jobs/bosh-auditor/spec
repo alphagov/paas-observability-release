@@ -13,6 +13,10 @@ properties:
   lookback_duration:
     description: 'The duration that the auditor will look back when starting without a cursor'
 
+  prometheus_listen_port:
+    description: 'Port on which prometheus metrics will be exposed via /metrics'
+    default: 9275
+
   collector.bosh_client_id:
     description: 'Client ID for BOSH director API'
 
@@ -24,7 +28,3 @@ properties:
 
   shippers.splunk.token:
     description: 'The Splunk HTTP Event Collector token'
-
-  prometheus_listen_port:
-    description: 'Port on which prometheus metrics will be exposed via /metrics'
-    default: 9275
