@@ -1,0 +1,24 @@
+---
+name: bosh-auditor
+
+description: 'Ships BOSH /events to destinations'
+
+templates:
+  bpm.yml.erb: config/bpm.yml
+
+packages:
+  - bosh-auditor
+
+properties:
+  lookback_duration:
+    description: 'The duration that the auditor will look back when starting without a cursor'
+
+  shippers.splunk.hec_endpoint:
+    description: 'The Splunk HTTP Event Collector endpoint'
+
+  shippers.splunk.token:
+    description: 'The Splunk HTTP Event Collector token'
+
+  prometheus_listen_port:
+    description: 'Port on which prometheus metrics will be exposed via /metrics'
+    default: 9275

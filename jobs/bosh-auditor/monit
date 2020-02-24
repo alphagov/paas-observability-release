@@ -1,0 +1,6 @@
+check process bosh-auditor
+  with pidfile /var/vcap/sys/run/bpm/bosh-auditor/bosh-auditor.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start bosh-auditor"
+    with timeout 60 seconds
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop bosh-auditor"
+  group vcap
