@@ -16,6 +16,12 @@ processes:
       - --lookback-duration
       - '<%= p('lookback_duration') %>'
 
+      - --bosh-client-id
+      - '<%= p('collector.bosh_client_id') %>'
+
+      - --bosh-client-secret
+      - '<%= p('collector.bosh_client_secret') %>'
+
       - --prometheus-listen-port
       - '<%= p('prometheus_listen_port') %>'
 

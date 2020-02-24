@@ -13,6 +13,12 @@ properties:
   lookback_duration:
     description: 'The duration that the auditor will look back when starting without a cursor'
 
+  collector.bosh_client_id:
+    description: 'Client ID for BOSH director API'
+
+  collector.bosh_client_secret:
+    description: 'Client secret for BOSH director API'
+
   shippers.splunk.hec_endpoint:
     description: 'The Splunk HTTP Event Collector endpoint'
 
