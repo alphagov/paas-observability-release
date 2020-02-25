@@ -21,6 +21,9 @@ var (
 	boshClientID     string
 	boshClientSecret string
 
+	boshCACert string
+	uaaCACert  string
+
 	splunkHECEndpoint string
 	splunkToken       string
 )
@@ -49,6 +52,17 @@ func main() {
 	)
 
 	flag.StringVar(
+		&boshCACert,
+		"bosh-ca-cert", "",
+		"Certificate authority used by the BOSH Director API in PEM format",
+	)
+	flag.StringVar(
+		&uaaCACert,
+		"uaa-ca-cert", "",
+		"Certificate authority used by UAA in PEM format",
+	)
+
+	flag.StringVar(
 		&splunkHECEndpoint,
 		"splunk-hec-endpoint", "",
 		"Endpoint for Splunk HTTP Event Collector which will receive shipped events",
@@ -67,6 +81,10 @@ func main() {
 
 	if boshClientID == "" || boshClientSecret == "" {
 		log.Fatalf("Flag invalid: --bosh-client-id and --bosh-client-secret must be provided")
+	}
+
+	if boshCACert == "" || uaaCACert == "" {
+		log.Fatalf("Flag invalid: --bosh-ca-cert and --uaa-ca-cert must be provided")
 	}
 
 	if splunkHECEndpoint == "" || splunkToken == "" {

@@ -17,11 +17,17 @@ properties:
     description: 'Port on which prometheus metrics will be exposed via /metrics'
     default: 9275
 
-  collector.bosh_client_id:
+  fetcher.bosh_client_id:
     description: 'Client ID for BOSH director API'
 
-  collector.bosh_client_secret:
+  fetcher.bosh_client_secret:
     description: 'Client secret for BOSH director API'
+
+  fetcher.bosh_ca_cert:
+    description: 'Certificate authority used by BOSH director'
+
+  fetcher.uaa_ca_cert:
+    description: 'Certificate authority used by UAA'
 
   shippers.splunk.hec_endpoint:
     description: 'The Splunk HTTP Event Collector endpoint'

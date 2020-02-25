@@ -19,14 +19,20 @@ processes:
       - --prometheus-listen-port
       - '<%= p('prometheus_listen_port') %>'
 
-      - --bosh-client-id
-      - '<%= p('collector.bosh_client_id') %>'
-
-      - --bosh-client-secret
-      - '<%= p('collector.bosh_client_secret') %>'
-
       - --splunk-hec-endpoint
       - '<%= p('shippers.splunk.hec_endpoint') %>'
 
       - --splunk-token
       - '<%= p('shippers.splunk.token') %>'
+
+      - --bosh-client-id
+      - '<%= p('fetcher.bosh_client_id') %>'
+
+      - --bosh-client-secret
+      - '<%= p('fetcher.bosh_client_secret') %>'
+
+      - --bosh-ca-cert
+      - '<%= p('fetcher.bosh_ca_cert') %>'
+
+      - --uaa-ca-cert
+      - '<%= p('fetcher.uaa_ca_cert') %>'
