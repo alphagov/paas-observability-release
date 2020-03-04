@@ -24,6 +24,9 @@ var (
 	boshCACert string
 	uaaCACert  string
 
+	boshURL string
+	uaaURL string
+
 	splunkHECEndpoint string
 	splunkToken       string
 )
@@ -63,6 +66,17 @@ func main() {
 	)
 
 	flag.StringVar(
+		&boshURL,
+		"bosh-url", "",
+		"URL used for BOSH director",
+	)
+	flag.StringVar(
+		&uaaURL,
+		"uaa-url", "",
+		"URL used for UAA to authenticate with BOSH director",
+	)
+
+	flag.StringVar(
 		&splunkHECEndpoint,
 		"splunk-hec-endpoint", "",
 		"Endpoint for Splunk HTTP Event Collector which will receive shipped events",
@@ -85,6 +99,10 @@ func main() {
 
 	if boshCACert == "" || uaaCACert == "" {
 		log.Fatalf("Flag invalid: --bosh-ca-cert and --uaa-ca-cert must be provided")
+	}
+
+	if boshURL == "" || uaaURL == "" {
+		log.Fatalf("Flag invalid: --bosh-url and --uaa-url must be provided")
 	}
 
 	if splunkHECEndpoint == "" || splunkToken == "" {

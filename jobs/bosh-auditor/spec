@@ -29,6 +29,12 @@ properties:
   fetcher.uaa_ca_cert:
     description: 'Certificate authority used by UAA'
 
+  fetcher.bosh_url:
+    description: 'URL used for BOSH director'
+
+  fetcher.uaa_url:
+    description: 'URL used for UAA to authenticate with BOSH director'
+
   shippers.splunk.hec_endpoint:
     description: 'The Splunk HTTP Event Collector endpoint'
 
