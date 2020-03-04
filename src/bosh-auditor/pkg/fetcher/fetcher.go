@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-type Fetcher func(time.Time) (time.Time, []boshdir.Event, error)
+type Fetcher func(time.Time) ([]boshdir.Event, error)
 
 type fetcher struct {
 	boshCACert       string
@@ -27,14 +27,14 @@ func NewFetcher(
 	uaaURL string,
 	boshURL string,
 ) Fetcher {
-	return func(t time.Time) (time.Time, []boshdir.Event, error) {
+	return func(t time.Time) ([]boshdir.Event, error) {
 		logger := boshlog.NewLogger(boshlog.LevelError)
 		uaaFactory := boshuaa.NewFactory(logger)
 
 		uaaConfig, err := boshuaa.NewConfigFromURL(uaaURL)
 		if err != nil {
 			fmt.Println(err)
-			return t, nil, err
+			return nil, err
 		}
 
 		uaaConfig.Client = boshClientID
@@ -44,7 +44,7 @@ func NewFetcher(
 		uaa, err := uaaFactory.New(uaaConfig)
 		if err != nil {
 			fmt.Println(err)
-			return t, nil, err
+			return  nil, err
 		}
 
 		boshFactory := boshdir.NewFactory(logger)
@@ -52,7 +52,7 @@ func NewFetcher(
 		boshConfig, err := boshdir.NewConfigFromURL(boshURL)
 		if err != nil {
 			fmt.Println(err)
-			return t, nil, err
+			return nil, err
 		}
 
 		boshConfig.CACert = boshCACert
@@ -61,30 +61,11 @@ func NewFetcher(
 		bosh, err := boshFactory.New(boshConfig, boshdir.NewNoopTaskReporter(), boshdir.NewNoopFileReporter())
 		if err != nil {
 			fmt.Println(err)
-			return t, nil, err
+			return nil, err
 		}
 
-		events, err := bosh.Events(boshdir.EventsFilter{
+		return bosh.Events(boshdir.EventsFilter{
 			After: t.Format(time.RFC3339),
 		})
-
-		if err != nil {
-			fmt.Println(err)
-			return t, nil, err
-		}
-
-		if len(events) == 0 {
-			fmt.Println(err)
-			return t, events, nil
-		}
-
-		latestEventTimestamp := events[0].Timestamp()
-		for _, e := range events {
-			if e.Timestamp().After(latestEventTimestamp) {
-				latestEventTimestamp = e.Timestamp()
-			}
-		}
-
-		return latestEventTimestamp, events, nil
 	}
 }
