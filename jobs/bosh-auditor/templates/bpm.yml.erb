@@ -4,23 +4,19 @@ processes:
 
     persistent_disk: true
     additional_volumes:
-      - path: /var/vcap/store/bosh-auditor/shipper-cursors
+      - path: /var/vcap/store/bosh-auditor-shipper-cursors
         writable: true
-        mount_only: true
 
     executable: /var/vcap/packages/bosh-auditor/bin/bosh-auditor
     args:
       - --cursor-dir
-      - /var/vcap/store/bosh-auditor/shipper-cursors
+      - /var/vcap/store/bosh-auditor-shipper-cursors
 
       - --lookback-duration
       - '<%= p('lookback_duration') %>'
 
       - --prometheus-listen-port
       - '<%= p('prometheus_listen_port') %>'
-
-      - --cursor-dir
-      - /var/vcap/store/bosh-auditor/shipper-cursors
 
       - --deploy-env
       - '<%= p('deploy_env') %>'
