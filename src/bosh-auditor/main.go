@@ -192,7 +192,7 @@ func main() {
 		)
 
 		shipper := s.NewShipper(
-			10*time.Millisecond,
+			20*time.Second,
 			logger.Session("bosh-auditor-splunk-shipper"),
 			cursor,
 			fetcher,
