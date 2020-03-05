@@ -8,10 +8,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	c "github.com/alphagov/paas-observability-release/src/bosh-auditor/pkg/cursor"
+	f "github.com/alphagov/paas-observability-release/src/bosh-auditor/pkg/fetcher"
+	s "github.com/alphagov/paas-observability-release/src/bosh-auditor/pkg/shipper"
 )
 
 var (
@@ -25,10 +31,13 @@ var (
 	uaaCACert  string
 
 	boshURL string
-	uaaURL string
+	uaaURL  string
 
 	splunkHECEndpoint string
 	splunkToken       string
+
+	cursorDir string
+	deployEnv string
 )
 
 func main() {
@@ -87,6 +96,18 @@ func main() {
 		"Token for Splunk HTTP Event Collector which will receive shipped events",
 	)
 
+	flag.StringVar(
+		&cursorDir,
+		"cursor-dir", "",
+		"Persistent directory in which bosh-auditor stores cursor files",
+	)
+
+	flag.StringVar(
+		&deployEnv,
+		"deploy-env", "",
+		"Environment in which bosh-auditor is deployed",
+	)
+
 	flag.Parse()
 
 	if 0 == prometheusListenPort || prometheusListenPort > 65535 {
@@ -109,6 +130,14 @@ func main() {
 		log.Fatalf("Flag invalid: --splunk-hec-endpoint and --splunk-token must be provided")
 	}
 
+	if cursorDir == "" {
+		log.Fatalf("Flag invalid: --cursor-dir must be provided")
+	}
+
+	if deployEnv == "" {
+		log.Fatalf("Flag invalid: --deploy-env must be provided")
+	}
+
 	logger := lager.NewLogger("bosh-auditor")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.INFO))
 
@@ -118,21 +147,67 @@ func main() {
 		"splunk-hec-endpoint":    splunkHECEndpoint,
 	})
 
+	ctx, shutdown := context.WithCancel(context.Background())
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		defer signal.Reset(syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+		shutdown()
+	}()
+
 	metricsServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", prometheusListenPort),
 		Handler: promhttp.Handler(),
 	}
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
 		err := metricsServer.ListenAndServe()
 		if err != nil {
-			log.Fatalf("Could not listen and serve metrics: %s", err)
+			logger.Error("err-fatal-metrics-server", err)
 		}
+		shutdown()
+		os.Exit(1)
 	}()
 
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
-	<-interrupt
+	wg.Add(1)
+	go func() {
+		cursor := c.NewFileCursor(
+			"bosh-auditor-splunk-shipper",
+			cursorDir,
+			time.Unix(1451606400, 0),
+			logger.Session("bosh-auditor-splunk-shipper-file-cursor"),
+		)
 
-	metricsServer.Shutdown(context.Background())
+		fetcher := f.NewFetcher(
+			boshURL,
+			uaaURL,
+			boshClientID,
+			boshClientSecret,
+			boshCACert,
+			uaaCACert,
+		)
+
+		shipper := s.NewShipper(
+			10*time.Millisecond,
+			logger.Session("bosh-auditor-splunk-shipper"),
+			cursor,
+			fetcher,
+			deployEnv,
+			splunkToken,
+			splunkHECEndpoint,
+		)
+
+		err := shipper.Run(ctx)
+		if err != nil {
+			logger.Error("err-fatal-shipper", err)
+		}
+		shutdown()
+		os.Exit(1)
+	}()
+
+	wg.Wait()
 }

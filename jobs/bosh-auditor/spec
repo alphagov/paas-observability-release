@@ -13,6 +13,9 @@ properties:
   lookback_duration:
     description: 'The duration that the auditor will look back when starting without a cursor'
 
+  deploy_env:
+    description: 'The environment in which bosh-auditor is deployed'
+
   prometheus_listen_port:
     description: 'Port on which prometheus metrics will be exposed via /metrics'
     default: 9275

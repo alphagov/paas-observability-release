@@ -19,6 +19,12 @@ processes:
       - --prometheus-listen-port
       - '<%= p('prometheus_listen_port') %>'
 
+      - --cursor-dir
+      - /var/vcap/store/bosh-auditor/shipper-cursors
+
+      - --deploy-env
+      - '<%= p('deploy_env') %>'
+
       - --splunk-hec-endpoint
       - '<%= p('shippers.splunk.hec_endpoint') %>'
 

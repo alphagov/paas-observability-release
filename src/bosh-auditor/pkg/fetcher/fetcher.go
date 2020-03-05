@@ -1,11 +1,11 @@
 package fetcher
 
 import (
+	"fmt"
 	boshdir "github.com/cloudfoundry/bosh-cli/director"
 	boshuaa "github.com/cloudfoundry/bosh-cli/uaa"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"time"
-	"fmt"
 )
 
 type Fetcher func(time.Time) ([]boshdir.Event, error)
@@ -20,12 +20,12 @@ type fetcher struct {
 }
 
 func NewFetcher(
-	boshCACert string,
-	uaaCACert string,
+	boshURL string,
+	uaaURL string,
 	boshClientID string,
 	boshClientSecret string,
-	uaaURL string,
-	boshURL string,
+	boshCACert string,
+	uaaCACert string,
 ) Fetcher {
 	return func(t time.Time) ([]boshdir.Event, error) {
 		logger := boshlog.NewLogger(boshlog.LevelError)
@@ -44,7 +44,7 @@ func NewFetcher(
 		uaa, err := uaaFactory.New(uaaConfig)
 		if err != nil {
 			fmt.Println(err)
-			return  nil, err
+			return nil, err
 		}
 
 		boshFactory := boshdir.NewFactory(logger)
