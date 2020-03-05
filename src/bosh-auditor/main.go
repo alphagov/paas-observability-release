@@ -178,7 +178,7 @@ func main() {
 		cursor := c.NewFileCursor(
 			"bosh-auditor-splunk-shipper",
 			cursorDir,
-			time.Unix(1451606400, 0),
+			time.Now().Add(-1*lookbackDuration),
 			logger.Session("bosh-auditor-splunk-shipper-file-cursor"),
 		)
 
