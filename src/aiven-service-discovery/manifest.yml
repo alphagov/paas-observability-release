@@ -1,0 +1,13 @@
+---
+applications:
+  - name: dit-es-metrics
+    buildpacks:
+      - go_buildpack
+    command: ./run.sh
+    env:
+      AIVEN_API_TOKEN: ((aiven_api_token))
+      AIVEN_PROJECT: "paas-cf-prod"
+      AIVEN_PROMETHEUS_ENDPOINT_ID: ((aiven_prometheus_endpoint_id))
+      SERVICE_DISCOVERY_TARGET_PATH: ((service_discovery_target_path))
+      SERVICE_NAMES_FILE: "/home/vcap/app/service_names.txt"
+      PROMETHEUS_LISTEN_PORT: ((prometheus_listen_port))

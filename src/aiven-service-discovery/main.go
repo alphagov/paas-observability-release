@@ -4,10 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -28,6 +30,7 @@ var (
 	aivenProject               string
 	aivenPrometheusEndpointID  string
 	serviceDiscoveryTargetPath string
+	serviceNamesFile           string
 	prometheusListenPort       uint
 )
 
@@ -36,6 +39,7 @@ func main() {
 	flag.StringVar(&aivenProject, "aiven-project", "", "Aiven project to discover")
 	flag.StringVar(&aivenPrometheusEndpointID, "aiven-prometheus-endpoint-id", "", "Aiven Prometheus service integration endpoint to use")
 	flag.StringVar(&serviceDiscoveryTargetPath, "service-discovery-target-path", "", "File path to where targets will be written")
+	flag.StringVar(&serviceNamesFile, "service-names-file", "", "File path where the names of services to scrape lives")
 	flag.UintVar(&prometheusListenPort, "prometheus-listen-port", 9274, "Port on which prometheus metrics will be exposed via /metrics")
 	flag.Parse()
 
@@ -68,6 +72,16 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalf("Could not create fetcher: %s", err)
+	}
+
+	if serviceNamesFile != "" {
+		content, err := ioutil.ReadFile(serviceNamesFile)
+		if err != nil {
+			log.Fatalf("Flag invalid: --service-names-file. Error reading file: %e", err)
+		}
+
+		lines := strings.Split(string(content), "\n")
+		fetcher = f.NewFilteredFetcher(fetcher, lines)
 	}
 
 	integrator, err := i.NewIntegrator(

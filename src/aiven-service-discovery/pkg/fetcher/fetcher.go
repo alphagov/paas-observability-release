@@ -41,6 +41,11 @@ type fetcher struct {
 	services      []aiven.Service
 }
 
+type filteredFetcher struct {
+	fetcher Fetcher
+	serviceNames []string
+}
+
 func NewFetcher(
 	aivenProject string,
 	aivenAPIToken string,
@@ -67,6 +72,13 @@ func NewFetcher(
 	}
 
 	return &f, nil
+}
+
+func NewFilteredFetcher(fetcher Fetcher, filters []string) Fetcher {
+	return &filteredFetcher{
+		fetcher: fetcher,
+		serviceNames: filters,
+	}
 }
 
 func (f *fetcher) Services() []aiven.Service {
@@ -142,4 +154,39 @@ func (f *fetcher) Stop() {
 
 func (f *fetcher) SetInterval(interval time.Duration) {
 	f.interval = interval
+}
+
+func (f *filteredFetcher) Services() []aiven.Service {
+	baseServices := f.fetcher.Services()
+
+	var filteredServices []aiven.Service
+	for _, service := range baseServices {
+		if stringInSlice(service.Name, f.serviceNames) {
+			filteredServices = append(filteredServices, service)
+		}
+	}
+
+	return filteredServices
+}
+
+func (f *filteredFetcher) Start() {
+	f.fetcher.Start()
+}
+
+func (f *filteredFetcher) Stop() {
+	f.fetcher.Stop()
+}
+
+func (f *filteredFetcher) SetInterval(t time.Duration) {
+	f.fetcher.SetInterval(t)
+}
+
+func stringInSlice(needle string, haystack []string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+
+	return false
 }
