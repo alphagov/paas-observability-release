@@ -34,10 +34,10 @@ processes:
       - '<%= p('fetcher.bosh_client_secret') %>'
 
       - --bosh-ca-cert
-      - '<%= p('fetcher.bosh_ca_cert') %>'
+      - <%= p('fetcher.bosh_ca_cert').inspect %>
 
       - --uaa-ca-cert
-      - '<%= p('fetcher.uaa_ca_cert') %>'
+      - <%= p('fetcher.uaa_ca_cert').inspect %>
 
       - --bosh-url
       - '<%= p('fetcher.bosh_url') %>'
