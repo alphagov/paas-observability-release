@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -45,6 +44,7 @@ type fetcher struct {
 type filteredFetcher struct {
 	fetcher      Fetcher
 	serviceNames []string
+	logger       lager.Logger
 }
 
 func NewFetcher(
@@ -75,10 +75,11 @@ func NewFetcher(
 	return &f, nil
 }
 
-func NewFilteredFetcher(fetcher Fetcher, filters []string) Fetcher {
+func NewFilteredFetcher(fetcher Fetcher, filters []string, logger lager.Logger) Fetcher {
 	return &filteredFetcher{
 		fetcher:      fetcher,
 		serviceNames: filters,
+		logger:       logger,
 	}
 }
 
@@ -125,6 +126,8 @@ func (f *fetcher) loop() {
 
 	f.wg.Add(1)
 
+	f.fetch()
+
 	for {
 		select {
 		case <-time.After(f.interval):
@@ -158,14 +161,16 @@ func (f *fetcher) SetInterval(interval time.Duration) {
 }
 
 func (f *filteredFetcher) Services() []aiven.Service {
+	lsess := f.logger.Session("filtered-services")
 	baseServices := f.fetcher.Services()
 
-	fmt.Printf("~~~ f.serviceNames = '%#v'", f.serviceNames)
 	var filteredServices []aiven.Service
 	for _, service := range baseServices {
-		fmt.Printf("~~~ service.Name = '%s'", service.Name)
 		if stringInSlice(service.Name, f.serviceNames) {
 			filteredServices = append(filteredServices, service)
+			lsess.Info("include", lager.Data{"service": service.Name})
+		} else {
+			lsess.Info("exclude", lager.Data{"service": service.Name})
 		}
 	}
 

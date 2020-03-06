@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -32,6 +33,7 @@ var (
 	serviceDiscoveryTargetPath string
 	serviceNamesFile           string
 	prometheusListenPort       uint
+	logLevel                   int
 )
 
 func main() {
@@ -41,6 +43,7 @@ func main() {
 	flag.StringVar(&serviceDiscoveryTargetPath, "service-discovery-target-path", "", "File path to where targets will be written")
 	flag.StringVar(&serviceNamesFile, "service-names-file", "", "File path where the names of services to scrape lives")
 	flag.UintVar(&prometheusListenPort, "prometheus-listen-port", 9274, "Port on which prometheus metrics will be exposed via /metrics")
+	flag.IntVar(&logLevel, "log-level", int(lager.INFO), "Log level")
 	flag.Parse()
 
 	if aivenAPIToken == "" {
@@ -64,7 +67,7 @@ func main() {
 	}
 
 	logger := lager.NewLogger("aiven-service-discovery")
-	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.INFO))
+	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.LogLevel(logLevel)))
 
 	fetcher, err := f.NewFetcher(
 		aivenProject, aivenAPIToken,
@@ -81,7 +84,7 @@ func main() {
 		}
 
 		lines := strings.Split(string(content), "\n")
-		fetcher = f.NewFilteredFetcher(fetcher, lines)
+		fetcher = f.NewFilteredFetcher(fetcher, lines, logger)
 	}
 
 	integrator, err := i.NewIntegrator(
@@ -119,8 +122,10 @@ func main() {
 	discoverer.Start()
 
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
-	<-interrupt
+	signal.Notify(interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+	sig := <-interrupt
+
+	logger.Info("received-signal", lager.Data{"signal": sig})
 
 	fetcher.Stop()
 	integrator.Stop()

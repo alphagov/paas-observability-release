@@ -1,0 +1,24 @@
+---
+scrape_configs:
+  - job_name: aiven
+    scheme: https
+
+    basic_auth:
+      username: ((aiven_username))
+      password: ((aiven_password))
+
+    file_sd_configs:
+      - refresh_interval: 15s
+        files:
+          - /home/vcap/app/service_prometheus_targets.json
+
+    tls_config:
+      insecure_skip_verify: true
+
+    relabel_configs:
+        - source_labels: [__address__]
+          separator: ;
+          regex: (.*)
+          target_label: __address__
+          replacement: ${1}:9273
+          action: replace
