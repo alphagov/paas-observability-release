@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-./aiven-service-discovery \
+bin/aiven-service-discovery \
   --aiven-api-token "${AIVEN_API_TOKEN}" \
   --aiven-project "${AIVEN_PROJECT}" \
   --aiven-prometheus-endpoint-id "${AIVEN_PROMETHEUS_ENDPOINT_ID}" \

@@ -77,7 +77,7 @@ func main() {
 	if serviceNamesFile != "" {
 		content, err := ioutil.ReadFile(serviceNamesFile)
 		if err != nil {
-			log.Fatalf("Flag invalid: --service-names-file. Error reading file: %e", err)
+			log.Fatalf("Could not read file at path given by --service-names-file=%s. Error reading file: %s", serviceNamesFile, err)
 		}
 
 		lines := strings.Split(string(content), "\n")

@@ -42,7 +42,7 @@ type fetcher struct {
 }
 
 type filteredFetcher struct {
-	fetcher Fetcher
+	fetcher      Fetcher
 	serviceNames []string
 }
 
@@ -76,7 +76,7 @@ func NewFetcher(
 
 func NewFilteredFetcher(fetcher Fetcher, filters []string) Fetcher {
 	return &filteredFetcher{
-		fetcher: fetcher,
+		fetcher:      fetcher,
 		serviceNames: filters,
 	}
 }

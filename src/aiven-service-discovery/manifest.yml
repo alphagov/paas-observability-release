@@ -6,8 +6,9 @@ applications:
     command: ./run.sh
     env:
       AIVEN_API_TOKEN: ((aiven_api_token))
-      AIVEN_PROJECT: "paas-cf-prod"
-      AIVEN_PROMETHEUS_ENDPOINT_ID: ((aiven_prometheus_endpoint_id))
-      SERVICE_DISCOVERY_TARGET_PATH: ((service_discovery_target_path))
-      SERVICE_NAMES_FILE: "/home/vcap/app/service_names.txt"
-      PROMETHEUS_LISTEN_PORT: ((prometheus_listen_port))
+      AIVEN_PROJECT: paas-cf-prod
+      AIVEN_PROMETHEUS_ENDPOINT_ID: paas-cf-prod
+      SERVICE_DISCOVERY_TARGET_PATH: service_prometheus_targets.json
+      SERVICE_NAMES_FILE: service_names.txt
+      PROMETHEUS_LISTEN_PORT: 8080 # 9095
+    health-check-type: port
