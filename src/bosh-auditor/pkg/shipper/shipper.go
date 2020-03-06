@@ -204,7 +204,7 @@ func (s *shipper) Run(ctx context.Context) error {
 
 				shippedEvents = append(shippedEvents, event)
 				s.eventsShipped++
-
+				EventsShippedTotal.Inc()
 			}
 
 			if err = s.cursor.UpdateTime(latestEventTimestamp); err != nil {
