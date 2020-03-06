@@ -1,0 +1,46 @@
+---
+processes:
+  - name: bosh-auditor
+
+    persistent_disk: true
+    additional_volumes:
+      - path: /var/vcap/store/bosh-auditor-shipper-cursors
+        writable: true
+
+    executable: /var/vcap/packages/bosh-auditor/bin/bosh-auditor
+    args:
+      - --cursor-dir
+      - /var/vcap/store/bosh-auditor-shipper-cursors
+
+      - --lookback-duration
+      - '<%= p('lookback_duration') %>'
+
+      - --prometheus-listen-port
+      - '<%= p('prometheus_listen_port') %>'
+
+      - --deploy-env
+      - '<%= p('deploy_env') %>'
+
+      - --splunk-hec-endpoint
+      - '<%= p('shippers.splunk.hec_endpoint') %>'
+
+      - --splunk-token
+      - '<%= p('shippers.splunk.token') %>'
+
+      - --bosh-client-id
+      - '<%= p('fetcher.bosh_client_id') %>'
+
+      - --bosh-client-secret
+      - '<%= p('fetcher.bosh_client_secret') %>'
+
+      - --bosh-ca-cert
+      - <%= p('fetcher.bosh_ca_cert').inspect %>
+
+      - --uaa-ca-cert
+      - <%= p('fetcher.uaa_ca_cert').inspect %>
+
+      - --bosh-url
+      - '<%= p('fetcher.bosh_url') %>'
+
+      - --uaa-url
+      - '<%= p('fetcher.uaa_url') %>'

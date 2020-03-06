@@ -1,0 +1,45 @@
+---
+name: bosh-auditor
+
+description: 'Ships BOSH /events to destinations'
+
+templates:
+  bpm.yml.erb: config/bpm.yml
+
+packages:
+  - bosh-auditor
+
+properties:
+  lookback_duration:
+    description: 'The duration that the auditor will look back when starting without a cursor'
+
+  deploy_env:
+    description: 'The environment in which bosh-auditor is deployed'
+
+  prometheus_listen_port:
+    description: 'Port on which prometheus metrics will be exposed via /metrics'
+    default: 9275
+
+  fetcher.bosh_client_id:
+    description: 'Client ID for BOSH director API'
+
+  fetcher.bosh_client_secret:
+    description: 'Client secret for BOSH director API'
+
+  fetcher.bosh_ca_cert:
+    description: 'Certificate authority used by BOSH director'
+
+  fetcher.uaa_ca_cert:
+    description: 'Certificate authority used by UAA'
+
+  fetcher.bosh_url:
+    description: 'URL used for BOSH director'
+
+  fetcher.uaa_url:
+    description: 'URL used for UAA to authenticate with BOSH director'
+
+  shippers.splunk.hec_endpoint:
+    description: 'The Splunk HTTP Event Collector endpoint'
+
+  shippers.splunk.token:
+    description: 'The Splunk HTTP Event Collector token'

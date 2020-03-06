@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e -x -u -o pipefail
+
+GOROOT=$(readlink -nf /var/vcap/packages/golang)
+export GOROOT
+export PATH=${GOROOT}/bin:${PATH}
+export GOPATH=/var/vcap/go
+export GOCACHE=/var/vcap/gocache
+export GO111MODULE=on
+
+echo "Building bosh-auditor..."
+cd ${BOSH_COMPILE_TARGET}/bosh-auditor/
+go build -mod=vendor -o /var/vcap/packages/bosh-auditor/bin/bosh-auditor
