@@ -18,7 +18,7 @@ import (
 	f "github.com/alphagov/paas-observability-release/src/bosh-auditor/pkg/fetcher"
 )
 
-type boshEvent struct {
+type BoshEvent struct {
 	ID             string `json:"id"`
 	Timestamp      int64  `json:"timestamp"`
 	User           string `json:"user"`
@@ -28,10 +28,10 @@ type boshEvent struct {
 	Instance       string `json:"instance"`
 }
 
-type splunkEvent struct {
+type SplunkEvent struct {
 	SourceType string    `json:"sourcetype"`
 	Source     string    `json:"source"`
-	Event      boshEvent `json:"event"`
+	Event      BoshEvent `json:"event"`
 }
 
 type splunkHTTPClient struct {
@@ -110,8 +110,8 @@ func NewShipper(
 	}
 }
 
-func convertEvent(event boshdir.Event) boshEvent {
-	return boshEvent{
+func convertEvent(event boshdir.Event) BoshEvent {
+	return BoshEvent{
 		ID:             event.ID(),
 		Timestamp:      event.Timestamp().Unix(),
 		User:           event.User(),
@@ -123,7 +123,7 @@ func convertEvent(event boshdir.Event) boshEvent {
 }
 
 func (s *shipper) shipEvent(event boshdir.Event) error {
-	bytesToShip, err := json.Marshal(splunkEvent{
+	bytesToShip, err := json.Marshal(SplunkEvent{
 		SourceType: "bosh-audit-event",
 		Source:     s.deployEnv,
 		Event:      convertEvent(event),

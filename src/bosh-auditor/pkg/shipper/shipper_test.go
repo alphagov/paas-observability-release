@@ -2,8 +2,10 @@ package shipper_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 
 	boshdir "github.com/cloudfoundry/bosh-cli/director"
 	"github.com/jarcoal/httpmock"
@@ -75,16 +78,31 @@ var _ = Describe("Shipper", func() {
 		fetcher = func(t time.Time) ([]boshdir.Event, error) {
 			return []boshdir.Event{
 				boshdir.NewEventFromResp(boshdir.Client{}, boshdir.EventResp{
-					ID:        "abcd",
-					Timestamp: 1234,
+					ID:             "abcd",
+					Timestamp:      1234,
+					User:           "some-user",
+					Action:         "some-action",
+					TaskID:         "some-task",
+					DeploymentName: "some-deployment",
+					Instance:       "some-instance",
 				}),
 				boshdir.NewEventFromResp(boshdir.Client{}, boshdir.EventResp{
-					ID:        "efgh",
-					Timestamp: 1235,
+					ID:             "efgh",
+					Timestamp:      1235,
+					User:           "some-user",
+					Action:         "some-action",
+					TaskID:         "some-task",
+					DeploymentName: "some-deployment",
+					Instance:       "some-instance",
 				}),
 				boshdir.NewEventFromResp(boshdir.Client{}, boshdir.EventResp{
-					ID:        "ijkl",
-					Timestamp: 1236,
+					ID:             "ijkl",
+					Timestamp:      1236,
+					User:           "some-user",
+					Action:         "some-action",
+					TaskID:         "some-task",
+					DeploymentName: "some-deployment",
+					Instance:       "some-instance",
 				}),
 			}, nil
 		}
@@ -99,9 +117,42 @@ var _ = Describe("Shipper", func() {
 
 		httpmock.RegisterResponder(
 			"POST", splunkURL,
-			httpmock.NewJsonResponderOrPanic(200, map[string]interface{}{
-				"message": "success",
-			}),
+			func(req *http.Request) (*http.Response, error) {
+				body, err := ioutil.ReadAll(req.Body)
+				Expect(err).NotTo(HaveOccurred())
+
+				var event s.SplunkEvent
+				err = json.Unmarshal(body, &event)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(event).To(MatchAllFields(Fields{
+					"SourceType": Equal("bosh-audit-event"),
+					"Source":     Equal("dev"),
+					"Event": MatchAllFields(Fields{
+						"ID": Or(
+							Equal("abcd"),
+							Equal("efgh"),
+							Equal("ijkl"),
+						),
+
+						"Timestamp": Or(
+							BeNumerically("==", int64(1234)),
+							BeNumerically("==", int64(1235)),
+							BeNumerically("==", int64(1236)),
+						),
+
+						"User":           Equal("some-user"),
+						"Action":         Equal("some-action"),
+						"TaskID":         Equal("some-task"),
+						"DeploymentName": Equal("some-deployment"),
+						"Instance":       Equal("some-instance"),
+					}),
+				}))
+
+				return httpmock.NewJsonResponse(200, map[string]interface{}{
+					"message": "success",
+				})
+			},
 		)
 
 		var (
@@ -149,8 +200,13 @@ var _ = Describe("Shipper", func() {
 
 			return []boshdir.Event{
 				boshdir.NewEventFromResp(boshdir.Client{}, boshdir.EventResp{
-					ID:        "abcd",
-					Timestamp: int64(fetcherCallCount),
+					ID:             "abcd",
+					Timestamp:      int64(fetcherCallCount),
+					User:           "some-user",
+					Action:         "some-action",
+					TaskID:         "some-task",
+					DeploymentName: "some-deployment",
+					Instance:       "some-instance",
 				}),
 			}, nil
 		}
@@ -165,9 +221,32 @@ var _ = Describe("Shipper", func() {
 
 		httpmock.RegisterResponder(
 			"POST", splunkURL,
-			httpmock.NewJsonResponderOrPanic(200, map[string]interface{}{
-				"message": "success",
-			}),
+			func(req *http.Request) (*http.Response, error) {
+				body, err := ioutil.ReadAll(req.Body)
+				Expect(err).NotTo(HaveOccurred())
+
+				var event s.SplunkEvent
+				err = json.Unmarshal(body, &event)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(event).To(MatchAllFields(Fields{
+					"SourceType": Equal("bosh-audit-event"),
+					"Source":     Equal("dev"),
+					"Event": MatchAllFields(Fields{
+						"ID":             Equal("abcd"),
+						"Timestamp":      BeAssignableToTypeOf(int64(0)),
+						"User":           Equal("some-user"),
+						"Action":         Equal("some-action"),
+						"TaskID":         Equal("some-task"),
+						"DeploymentName": Equal("some-deployment"),
+						"Instance":       Equal("some-instance"),
+					}),
+				}))
+
+				return httpmock.NewJsonResponse(200, map[string]interface{}{
+					"message": "success",
+				})
+			},
 		)
 
 		var (
