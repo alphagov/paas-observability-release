@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -159,8 +160,10 @@ func (f *fetcher) SetInterval(interval time.Duration) {
 func (f *filteredFetcher) Services() []aiven.Service {
 	baseServices := f.fetcher.Services()
 
+	fmt.Printf("~~~ f.serviceNames = '%#v'", f.serviceNames)
 	var filteredServices []aiven.Service
 	for _, service := range baseServices {
+		fmt.Printf("~~~ service.Name = '%s'", service.Name)
 		if stringInSlice(service.Name, f.serviceNames) {
 			filteredServices = append(filteredServices, service)
 		}
