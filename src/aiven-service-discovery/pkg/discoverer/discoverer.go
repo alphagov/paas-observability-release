@@ -33,7 +33,8 @@ type Discoverer interface {
 type discoverer struct {
 	aivenProject string
 
-	targetPath string
+	targetPath         string
+	extraServiceLabels map[string]map[string]string
 
 	fetcher  f.Fetcher
 	resolver r.Resolver
@@ -49,6 +50,7 @@ type discoverer struct {
 func NewDiscoverer(
 	aivenProject string,
 	targetPath string,
+	extraServiceLabels map[string]map[string]string,
 
 	fetcher f.Fetcher,
 	resolver r.Resolver,
@@ -58,8 +60,9 @@ func NewDiscoverer(
 	lsession := logger.Session("discoverer", lager.Data{"project": aivenProject})
 
 	d := discoverer{
-		aivenProject: aivenProject,
-		targetPath:   targetPath,
+		aivenProject:       aivenProject,
+		targetPath:         targetPath,
+		extraServiceLabels: extraServiceLabels,
 
 		fetcher:  fetcher,
 		resolver: resolver,
@@ -109,15 +112,24 @@ func (d *discoverer) goPerformDNSDiscovery(
 			continue
 		}
 
+		labels := map[string]string{
+			"aiven_service_name": service.Name,
+			"aiven_service_type": service.Type,
+			"aiven_hostname":     hostname,
+			"aiven_plan":         service.Plan,
+			"aiven_cloud":        service.CloudName,
+			"aiven_node_count":   fmt.Sprintf("%d", service.NodeCount),
+		}
+
+		relevantExtraLabels, ok := d.extraServiceLabels[service.Name]
+		if ok {
+			for key, value := range relevantExtraLabels {
+				labels[key] = value
+			}
+		}
+
 		results <- prometheusTargetConfig{
-			Labels: prometheusTargetConfigLabels{
-				ServiceName: service.Name,
-				ServiceType: service.Type,
-				Hostname:    hostname,
-				Plan:        service.Plan,
-				Cloud:       service.CloudName,
-				NodeCount:   fmt.Sprintf("%d", service.NodeCount),
-			},
+			Labels:  labels,
 			Targets: ips,
 		}
 	}

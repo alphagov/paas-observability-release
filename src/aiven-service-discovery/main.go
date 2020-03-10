@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"code.cloudfoundry.org/lager"
+	"encoding/json"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	d "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/discoverer"
@@ -31,7 +31,7 @@ var (
 	aivenProject               string
 	aivenPrometheusEndpointID  string
 	serviceDiscoveryTargetPath string
-	serviceNamesFile           string
+	servicesFile               string
 	prometheusListenPort       uint
 	logLevel                   int
 )
@@ -41,7 +41,7 @@ func main() {
 	flag.StringVar(&aivenProject, "aiven-project", "", "Aiven project to discover")
 	flag.StringVar(&aivenPrometheusEndpointID, "aiven-prometheus-endpoint-id", "", "Aiven Prometheus service integration endpoint to use")
 	flag.StringVar(&serviceDiscoveryTargetPath, "service-discovery-target-path", "", "File path to where targets will be written")
-	flag.StringVar(&serviceNamesFile, "service-names-file", "", "File path where the names of services to scrape lives")
+	flag.StringVar(&servicesFile, "services-file", "", "File path where the services to scrape live")
 	flag.UintVar(&prometheusListenPort, "prometheus-listen-port", 9274, "Port on which prometheus metrics will be exposed via /metrics")
 	flag.IntVar(&logLevel, "log-level", int(lager.INFO), "Log level")
 	flag.Parse()
@@ -77,14 +77,30 @@ func main() {
 		log.Fatalf("Could not create fetcher: %s", err)
 	}
 
-	if serviceNamesFile != "" {
-		content, err := ioutil.ReadFile(serviceNamesFile)
+	extraServiceLabels := map[string]map[string]string{}
+	if servicesFile != "" {
+		type Service struct {
+			AivenService string            `json:"aiven_service"`
+			ExtraLabels  map[string]string `json:"extra_labels"`
+		}
+		var services []Service
+
+		servicesJSON, err := ioutil.ReadFile(servicesFile)
 		if err != nil {
-			log.Fatalf("Could not read file at path given by --service-names-file=%s. Error reading file: %s", serviceNamesFile, err)
+			log.Fatalf("Could not read file at path given by --services-file=%s. Error reading file: %s", servicesFile, err)
 		}
 
-		lines := strings.Split(string(content), "\n")
-		fetcher = f.NewFilteredFetcher(fetcher, lines, logger)
+		err = json.Unmarshal(servicesJSON, &services)
+		if err != nil {
+			log.Fatalf("Could not deserialise the services file contents as valid JSON: %s", err)
+		}
+
+		var serviceNames []string
+		for _, service := range services {
+			serviceNames = append(serviceNames, service.AivenService)
+			extraServiceLabels[service.AivenService] = service.ExtraLabels
+		}
+		fetcher = f.NewFilteredFetcher(fetcher, serviceNames, logger)
 	}
 
 	integrator, err := i.NewIntegrator(
@@ -97,7 +113,7 @@ func main() {
 	}
 
 	discoverer, err := d.NewDiscoverer(
-		aivenProject, serviceDiscoveryTargetPath,
+		aivenProject, serviceDiscoveryTargetPath, extraServiceLabels,
 		fetcher, r.NewResolver(),
 		logger,
 	)
