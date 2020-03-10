@@ -4,6 +4,9 @@ applications:
     buildpacks:
       - go_buildpack
 
+    disk_quota: 4G
+    memory: 4G
+
     env:
       AIVEN_API_TOKEN: ((aiven_api_token))
       AIVEN_BASIC_AUTH_USER: ((aiven_username))
