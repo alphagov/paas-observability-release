@@ -14,7 +14,7 @@ applications:
       AIVEN_PROJECT: paas-cf-prod
       AIVEN_PROMETHEUS_ENDPOINT_ID: paas-cf-prod
       SERVICE_DISCOVERY_TARGET_PATH: /home/vcap/app/service_prometheus_targets.json
-      SERVICES_FILE: /home/vcap/app/aiven_services.json
+      SERVICES_FILE: /home/vcap/app/dit_aiven_services.json
       PROMETHEUS_LISTEN_PORT: 9096
 
     processes:
