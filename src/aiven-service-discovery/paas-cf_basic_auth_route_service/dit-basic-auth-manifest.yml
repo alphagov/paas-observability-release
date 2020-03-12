@@ -1,0 +1,11 @@
+---
+applications:
+ - name: dit-es-metrics-basic-auth-route-service
+   memory: 64M
+   disk_quota: 100M
+   instances: 2
+   buildpack: go_buildpack
+   env:
+     GOPACKAGENAME: github.com/alext/cf_basic_auth_route_service
+     AUTH_USERNAME: ((dit_exporter_basic_auth_username))
+     AUTH_PASSWORD: ((dit_exporter_basic_auth_password))
