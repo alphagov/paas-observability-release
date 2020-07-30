@@ -32,7 +32,7 @@ type fakeWriter struct {
 	mostRecentWrite []writer.PrometheusTargetConfig
 }
 
-func (w *fakeWriter) Write(targets []writer.PrometheusTargetConfig) {
+func (w *fakeWriter) WritePrometheusTargetConfigs(targets []writer.PrometheusTargetConfig) {
 	w.mostRecentWrite = targets
 }
 

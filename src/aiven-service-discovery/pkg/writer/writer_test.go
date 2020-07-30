@@ -64,7 +64,7 @@ var _ = Describe("Writer", func() {
 
 	It("should keep the file up to date with targets", func() {
 		By("writing the targets")
-		w.Write([]writer.PrometheusTargetConfig{
+		w.WritePrometheusTargetConfigs([]writer.PrometheusTargetConfig{
 			{
 				Targets: []net.IP{net.IPv4(1, 2, 3, 4)},
 				Labels: writer.PrometheusTargetConfigLabels{
@@ -93,7 +93,7 @@ var _ = Describe("Writer", func() {
         }]`))
 
 		By("updating the targets")
-		w.Write([]writer.PrometheusTargetConfig{
+		w.WritePrometheusTargetConfigs([]writer.PrometheusTargetConfig{
 			{
 				Targets: []net.IP{
 					net.IPv4(1, 2, 3, 4),
@@ -125,7 +125,7 @@ var _ = Describe("Writer", func() {
         }]`))
 
 		By("updating the targets several times")
-		w.Write([]writer.PrometheusTargetConfig{
+		w.WritePrometheusTargetConfigs([]writer.PrometheusTargetConfig{
 			{
 				Targets: []net.IP{
 					net.IPv4(1, 2, 3, 4),
@@ -181,7 +181,7 @@ var _ = Describe("Writer", func() {
         }]`))
 
 		By("updating even if there are no services")
-		w.Write([]writer.PrometheusTargetConfig{})
+		w.WritePrometheusTargetConfigs([]writer.PrometheusTargetConfig{})
 		Eventually(func() []byte {
 			contents, _ := ioutil.ReadFile(target)
 			return contents

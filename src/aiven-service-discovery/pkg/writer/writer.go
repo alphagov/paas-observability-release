@@ -12,7 +12,7 @@ func init() {
 }
 
 type Writer interface {
-	Write(targets []PrometheusTargetConfig)
+	WritePrometheusTargetConfigs(targets []PrometheusTargetConfig)
 }
 
 type writer struct {
@@ -34,8 +34,8 @@ func NewWriter(
 	}
 }
 
-func (w *writer) Write(targets []PrometheusTargetConfig) {
-	lsession := w.logger.Session("write")
+func (w *writer) WritePrometheusTargetConfigs(targets []PrometheusTargetConfig) {
+	lsession := w.logger.Session("write-prometheus-target-configs")
 	lsession.Info("begin")
 	defer lsession.Info("end")
 

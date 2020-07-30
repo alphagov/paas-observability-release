@@ -174,7 +174,7 @@ func (d *discoverer) discoverAndWrite() {
 	targets := d.performDNSDiscovery(servicesWithPrometheus)
 	lsession.Info("targets", lager.Data{"targets": targets})
 	DiscovererWriteTargetsTotal.Inc()
-	d.writer.Write(targets)
+	d.writer.WritePrometheusTargetConfigs(targets)
 }
 
 func (d *discoverer) loop() {
