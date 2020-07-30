@@ -1,9 +1,7 @@
 package discoverer
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"sync"
 	"time"
 
@@ -12,6 +10,7 @@ import (
 
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
 	r "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/resolver"
+	w "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/writer"
 )
 
 func init() {
@@ -33,10 +32,9 @@ type Discoverer interface {
 type discoverer struct {
 	aivenProject string
 
-	targetPath string
-
 	fetcher  f.Fetcher
 	resolver r.Resolver
+	writer   w.Writer
 
 	logger lager.Logger
 
@@ -48,10 +46,9 @@ type discoverer struct {
 
 func NewDiscoverer(
 	aivenProject string,
-	targetPath string,
-
 	fetcher f.Fetcher,
 	resolver r.Resolver,
+	writer w.Writer,
 
 	logger lager.Logger,
 ) (Discoverer, error) {
@@ -59,10 +56,10 @@ func NewDiscoverer(
 
 	d := discoverer{
 		aivenProject: aivenProject,
-		targetPath:   targetPath,
 
 		fetcher:  fetcher,
 		resolver: resolver,
+		writer:   writer,
 
 		logger: lsession,
 
@@ -77,7 +74,7 @@ func NewDiscoverer(
 func (d *discoverer) goPerformDNSDiscovery(
 	services []aiven.Service,
 	wg *sync.WaitGroup,
-	results chan prometheusTargetConfig,
+	results chan w.PrometheusTargetConfig,
 ) {
 	defer wg.Done()
 
@@ -109,8 +106,8 @@ func (d *discoverer) goPerformDNSDiscovery(
 			continue
 		}
 
-		results <- prometheusTargetConfig{
-			Labels: prometheusTargetConfigLabels{
+		results <- w.PrometheusTargetConfig{
+			Labels: w.PrometheusTargetConfigLabels{
 				ServiceName: service.Name,
 				ServiceType: service.Type,
 				Hostname:    hostname,
@@ -123,7 +120,7 @@ func (d *discoverer) goPerformDNSDiscovery(
 	}
 }
 
-func (d *discoverer) performDNSDiscovery(services []aiven.Service) []prometheusTargetConfig {
+func (d *discoverer) performDNSDiscovery(services []aiven.Service) []w.PrometheusTargetConfig {
 	lsession := d.logger.Session("perform-dns-discovery")
 	lsession.Info("begin")
 	defer lsession.Info("end")
@@ -135,7 +132,7 @@ func (d *discoverer) performDNSDiscovery(services []aiven.Service) []prometheusT
 	}
 
 	var wg sync.WaitGroup
-	results := make(chan prometheusTargetConfig, len(services))
+	results := make(chan w.PrometheusTargetConfig, len(services))
 
 	for _, queue := range work {
 		wg.Add(1)
@@ -145,45 +142,12 @@ func (d *discoverer) performDNSDiscovery(services []aiven.Service) []prometheusT
 	wg.Wait()
 	close(results)
 
-	targets := make([]prometheusTargetConfig, 0)
+	targets := make([]w.PrometheusTargetConfig, 0)
 	for target := range results {
 		targets = append(targets, target)
 	}
 
 	return targets
-}
-
-func (d *discoverer) writeTargets(targets []prometheusTargetConfig) {
-	lsession := d.logger.Session("write-targets")
-	lsession.Info("begin")
-	defer lsession.Info("end")
-
-	DiscovererWriteTargetsTotal.Inc()
-
-	targetsAsJSON, err := json.Marshal(targets)
-
-	if err != nil {
-		lsession.Error(
-			"err-marshal-json-targets",
-			err, lager.Data{"targets": targets, "target-path": d.targetPath},
-		)
-
-		DiscovererWriteTargetsErrorsTotal.Inc()
-
-		return
-	}
-
-	err = ioutil.WriteFile(d.targetPath, targetsAsJSON, 0644)
-	if err != nil {
-		lsession.Error(
-			"err-write-json-targets",
-			err, lager.Data{"target": d.targetPath},
-		)
-
-		DiscovererWriteTargetsErrorsTotal.Inc()
-
-		return
-	}
 }
 
 func (d *discoverer) discoverAndWrite() {
@@ -209,7 +173,8 @@ func (d *discoverer) discoverAndWrite() {
 
 	targets := d.performDNSDiscovery(servicesWithPrometheus)
 	lsession.Info("targets", lager.Data{"targets": targets})
-	d.writeTargets(targets)
+	DiscovererWriteTargetsTotal.Inc()
+	d.writer.Write(targets)
 }
 
 func (d *discoverer) loop() {

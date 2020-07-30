@@ -2,9 +2,7 @@ package discoverer_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
-	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -17,6 +15,7 @@ import (
 	fetcherfakes "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher/fakes"
 	resolverfakes "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/resolver/fakes"
 	h "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/testhelpers"
+	"github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/writer"
 )
 
 const (
@@ -29,40 +28,41 @@ const (
 	ctlyInterval = "10ms"
 )
 
+type fakeWriter struct {
+	mostRecentWrite []writer.PrometheusTargetConfig
+}
+
+func (w *fakeWriter) Write(targets []writer.PrometheusTargetConfig) {
+	w.mostRecentWrite = targets
+}
+
 var _ = Describe("Discoverer", func() {
 	var (
 		d discoverer.Discoverer
+		w *fakeWriter
 		f *fetcherfakes.FakeFetcher
 		r *resolverfakes.FakeResolver
-
-		target string
 
 		logger lager.Logger
 
 		discovererDNSDiscoveryErrorsTotal float64
 		discovererDNSDiscoveriesTotal     float64
-		discovererWriteTargetsErrorsTotal float64
 		discovererWriteTargetsTotal       float64
 	)
 
 	BeforeEach(func() {
 		var err error
 
-		targetFile, err := ioutil.TempFile("", "targets")
-		Expect(err).NotTo(HaveOccurred())
-		target = targetFile.Name()
-		err = targetFile.Close()
-		Expect(err).NotTo(HaveOccurred())
-
 		logger = lager.NewLogger("discoverer-test")
 		logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.INFO))
 
 		f = fetcherfakes.NewFakeFetcher()
 		r = resolverfakes.NewFakeResolver()
+		w = &fakeWriter{}
 
 		d, err = discoverer.NewDiscoverer(
-			project, target,
-			f, r,
+			project,
+			f, r, w,
 			logger,
 		)
 		Expect(err).NotTo(HaveOccurred())
@@ -79,18 +79,11 @@ var _ = Describe("Discoverer", func() {
 		discovererWriteTargetsTotal = h.CurrentMetricValue(
 			discoverer.DiscovererWriteTargetsTotal,
 		)
-		discovererWriteTargetsErrorsTotal = h.CurrentMetricValue(
-			discoverer.DiscovererWriteTargetsErrorsTotal,
-		)
 	})
 
 	AfterEach(func() {
 		By("stopping")
 		d.Stop()
-
-		if target != "" {
-			os.Remove(target)
-		}
 	})
 
 	It("should perform a full integration cycle", func() {
@@ -101,10 +94,9 @@ var _ = Describe("Discoverer", func() {
 		d.Start()
 
 		By("polling until there are no targets")
-		Eventually(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, evTimeout, evInterval).Should(MatchJSON(`[]`))
+		Eventually(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, evTimeout, evInterval).Should(BeEmpty())
 
 		f.ShouldReturn([]aiven.Service{
 			aiven.Service{
@@ -122,38 +114,40 @@ var _ = Describe("Discoverer", func() {
 		r.ShouldReturnIPs([]net.IP{net.IPv4(1, 2, 3, 4)})
 
 		By("polling until there are targets")
-		Eventually(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, evTimeout, evInterval).Should(MatchJSON(`[{
-			"targets": ["1.2.3.4"],
-			"labels": {
-				"aiven_service_name": "a-service",
-				"aiven_service_type": "elasticsearch",
-				"aiven_hostname": "an-instance.aivencloud.com",
-				"aiven_plan": "tiny-6.x",
-				"aiven_cloud": "aws-eu-west-1",
-				"aiven_node_count": "3"
-			}
-		}]`))
+		Eventually(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, evTimeout, evInterval).Should(Equal([]writer.PrometheusTargetConfig{
+			{
+				Targets: []net.IP{net.IPv4(1, 2, 3, 4)},
+				Labels: writer.PrometheusTargetConfigLabels{
+					ServiceName: "a-service",
+					ServiceType: "elasticsearch",
+					Hostname:    "an-instance.aivencloud.com",
+					Plan:        "tiny-6.x",
+					Cloud:       "aws-eu-west-1",
+					NodeCount:   "3",
+				},
+			},
+		}))
 
 		r.ShouldReturnIPs([]net.IP{net.IPv4(1, 2, 3, 4), net.IPv4(4, 3, 2, 1)})
 
 		By("polling until the targets have updated")
-		Eventually(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, evTimeout, evInterval).Should(MatchJSON(`[{
-			"targets": ["1.2.3.4", "4.3.2.1"],
-			"labels": {
-				"aiven_service_name": "a-service",
-				"aiven_service_type": "elasticsearch",
-				"aiven_hostname": "an-instance.aivencloud.com",
-				"aiven_plan": "tiny-6.x",
-				"aiven_cloud": "aws-eu-west-1",
-				"aiven_node_count": "3"
-			}
-		}]`))
+		Eventually(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, evTimeout, evInterval).Should(Equal([]writer.PrometheusTargetConfig{
+			{
+				Targets: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv4(4, 3, 2, 1)},
+				Labels: writer.PrometheusTargetConfigLabels{
+					ServiceName: "a-service",
+					ServiceType: "elasticsearch",
+					Hostname:    "an-instance.aivencloud.com",
+					Plan:        "tiny-6.x",
+					Cloud:       "aws-eu-west-1",
+					NodeCount:   "3",
+				},
+			},
+		}))
 
 		f.ShouldReturn([]aiven.Service{
 			aiven.Service{
@@ -181,50 +175,38 @@ var _ = Describe("Discoverer", func() {
 		})
 
 		By("polling until there are more targets")
-		Eventually(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, evTimeout, evInterval).Should(Or(MatchJSON(`[{
-			"targets": ["1.2.3.4", "4.3.2.1"],
-			"labels": {
-				"aiven_service_name": "a-service",
-				"aiven_service_type": "elasticsearch",
-				"aiven_hostname": "an-instance.aivencloud.com",
-				"aiven_plan": "tiny-6.x",
-				"aiven_cloud": "aws-eu-west-1",
-				"aiven_node_count": "3"
-			}
-		}, {
-			"targets": ["1.2.3.4", "4.3.2.1"],
-			"labels": {
-				"aiven_service_name": "another-service",
-				"aiven_service_type": "elasticsearch",
-				"aiven_hostname": "another-instance.aivencloud.com",
-				"aiven_plan": "tiny-7.x",
-				"aiven_cloud": "aws-eu-west-1",
-				"aiven_node_count": "2"
-			}
-		}]`), MatchJSON(`[{
-			"targets": ["1.2.3.4", "4.3.2.1"],
-			"labels": {
-				"aiven_service_name": "another-service",
-				"aiven_service_type": "elasticsearch",
-				"aiven_hostname": "another-instance.aivencloud.com",
-				"aiven_plan": "tiny-7.x",
-				"aiven_cloud": "aws-eu-west-1",
-				"aiven_node_count": "2"
-			}
-		}, {
-			"targets": ["1.2.3.4", "4.3.2.1"],
-			"labels": {
-				"aiven_service_name": "a-service",
-				"aiven_service_type": "elasticsearch",
-				"aiven_hostname": "an-instance.aivencloud.com",
-				"aiven_plan": "tiny-6.x",
-				"aiven_cloud": "aws-eu-west-1",
-				"aiven_node_count": "3"
-			}
-		}]`)))
+		Eventually(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, evTimeout, evInterval).Should(ConsistOf([]writer.PrometheusTargetConfig{
+			{
+				Targets: []net.IP{
+					net.IPv4(1, 2, 3, 4),
+					net.IPv4(4, 3, 2, 1),
+				},
+				Labels: writer.PrometheusTargetConfigLabels{
+					ServiceName: "a-service",
+					ServiceType: "elasticsearch",
+					Hostname:    "an-instance.aivencloud.com",
+					Plan:        "tiny-6.x",
+					Cloud:       "aws-eu-west-1",
+					NodeCount:   "3",
+				},
+			},
+			{
+				Targets: []net.IP{
+					net.IPv4(1, 2, 3, 4),
+					net.IPv4(4, 3, 2, 1),
+				},
+				Labels: writer.PrometheusTargetConfigLabels{
+					ServiceName: "another-service",
+					ServiceType: "elasticsearch",
+					Hostname:    "another-instance.aivencloud.com",
+					Plan:        "tiny-7.x",
+					Cloud:       "aws-eu-west-1",
+					NodeCount:   "2",
+				},
+			},
+		}))
 
 		f.ShouldReturn([]aiven.Service{
 			aiven.Service{
@@ -236,11 +218,9 @@ var _ = Describe("Discoverer", func() {
 		})
 
 		By("polling until there are no targets")
-		Eventually(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, evTimeout, evInterval).Should(MatchJSON(`[]`))
-
+		Eventually(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, evTimeout, evInterval).Should(BeEmpty())
 		By("checking the metrics")
 		Expect(discoverer.DiscovererDNSDiscoveriesTotal).To(
 			h.MetricIncrementedBy(discovererDNSDiscoveriesTotal, ">=", 3),
@@ -250,9 +230,6 @@ var _ = Describe("Discoverer", func() {
 		)
 		Expect(discoverer.DiscovererWriteTargetsTotal).To(
 			h.MetricIncrementedBy(discovererWriteTargetsTotal, ">=", 1),
-		)
-		Expect(discoverer.DiscovererWriteTargetsErrorsTotal).To(
-			h.MetricIncrementedBy(discovererWriteTargetsErrorsTotal, "==", 0),
 		)
 	})
 
@@ -264,10 +241,9 @@ var _ = Describe("Discoverer", func() {
 		d.Start()
 
 		By("polling until there are no targets")
-		Eventually(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, evTimeout, evInterval).Should(MatchJSON(`[]`))
+		Eventually(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, evTimeout, evInterval).Should(BeEmpty())
 
 		f.ShouldReturn([]aiven.Service{
 			aiven.Service{
@@ -284,29 +260,29 @@ var _ = Describe("Discoverer", func() {
 		})
 
 		By("polling while there are no targets")
-		Consistently(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, ctlyTimeout, ctlyInterval).Should(MatchJSON(`[]`))
+		Consistently(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, ctlyTimeout, ctlyInterval).Should(BeEmpty())
 
 		By("polling until there are targets")
 		r.ShouldReturnError(nil)
 		r.ShouldReturnIPs([]net.IP{net.IPv4(1, 2, 3, 4)})
 
-		Eventually(func() []byte {
-			contents, _ := ioutil.ReadFile(target)
-			return contents
-		}, evTimeout, evInterval).Should(MatchJSON(`[{
-			"targets": ["1.2.3.4"],
-			"labels": {
-				"aiven_service_name": "a-service",
-				"aiven_service_type": "elasticsearch",
-				"aiven_hostname": "an-instance.aivencloud.com",
-				"aiven_plan": "tiny-6.x",
-				"aiven_cloud": "aws-eu-west-1",
-				"aiven_node_count": "3"
-			}
-		}]`))
+		Eventually(func() []writer.PrometheusTargetConfig {
+			return w.mostRecentWrite
+		}, evTimeout, evInterval).Should(Equal([]writer.PrometheusTargetConfig{
+			{
+				Targets: []net.IP{net.IPv4(1, 2, 3, 4)},
+				Labels: writer.PrometheusTargetConfigLabels{
+					ServiceName: "a-service",
+					ServiceType: "elasticsearch",
+					Hostname:    "an-instance.aivencloud.com",
+					Plan:        "tiny-6.x",
+					Cloud:       "aws-eu-west-1",
+					NodeCount:   "3",
+				},
+			},
+		}))
 
 		By("checking the metrics")
 		Expect(discoverer.DiscovererDNSDiscoveriesTotal).To(
@@ -317,9 +293,6 @@ var _ = Describe("Discoverer", func() {
 		)
 		Expect(discoverer.DiscovererWriteTargetsTotal).To(
 			h.MetricIncrementedBy(discovererWriteTargetsTotal, ">=", 1),
-		)
-		Expect(discoverer.DiscovererWriteTargetsErrorsTotal).To(
-			h.MetricIncrementedBy(discovererWriteTargetsErrorsTotal, "==", 0),
 		)
 	})
 })

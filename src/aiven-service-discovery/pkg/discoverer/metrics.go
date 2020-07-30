@@ -5,14 +5,9 @@ import (
 )
 
 var (
-	DiscovererWriteTargetsErrorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "discoverer_write_targets_errors_total",
-		Help: "Counter of total number of target file write failures",
-	})
-
 	DiscovererWriteTargetsTotal = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "discoverer_write_targets_total",
-		Help: "Counter of total number of target file writes",
+		Help: "Counter of total number of writes invoked",
 	})
 
 	DiscovererDNSDiscoveryErrorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
@@ -27,7 +22,6 @@ var (
 )
 
 func initMetrics() {
-	prometheus.MustRegister(DiscovererWriteTargetsErrorsTotal)
 	prometheus.MustRegister(DiscovererWriteTargetsTotal)
 
 	prometheus.MustRegister(DiscovererDNSDiscoveryErrorsTotal)

@@ -1,10 +1,10 @@
-package discoverer
+package writer
 
 import (
 	"net"
 )
 
-type prometheusTargetConfigLabels struct {
+type PrometheusTargetConfigLabels struct {
 	ServiceName string `json:"aiven_service_name"`
 	ServiceType string `json:"aiven_service_type"`
 	Hostname    string `json:"aiven_hostname"`
@@ -13,7 +13,7 @@ type prometheusTargetConfigLabels struct {
 	NodeCount   string `json:"aiven_node_count"`
 }
 
-type prometheusTargetConfig struct {
+type PrometheusTargetConfig struct {
 	Targets []net.IP                     `json:"targets"`
-	Labels  prometheusTargetConfigLabels `json:"labels"`
+	Labels  PrometheusTargetConfigLabels `json:"labels"`
 }

@@ -17,6 +17,7 @@ import (
 	f "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/fetcher"
 	i "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/integrator"
 	r "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/resolver"
+	w "github.com/alphagov/paas-observability-release/src/aiven-service-discovery/pkg/writer"
 )
 
 const (
@@ -79,9 +80,11 @@ func main() {
 		log.Fatalf("Could not create integrator: %s", err)
 	}
 
+	writer := w.NewWriter(serviceDiscoveryTargetPath, logger)
+
 	discoverer, err := d.NewDiscoverer(
-		aivenProject, serviceDiscoveryTargetPath,
-		fetcher, r.NewResolver(),
+		aivenProject,
+		fetcher, r.NewResolver(), writer,
 		logger,
 	)
 	if err != nil {
