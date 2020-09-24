@@ -1,0 +1,6 @@
+check process coredns
+  with pidfile /var/vcap/sys/run/bpm/coredns/coredns.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start coredns"
+    with timeout 60 seconds
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop coredns"
+  group vcap

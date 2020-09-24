@@ -1,0 +1,14 @@
+---
+processes:
+  - name: coredns
+
+    executable: /var/vcap/packages/coredns/bin/coredns
+
+    args:
+      - -conf
+      - /var/vcap/jobs/coredns/config/Corefile
+
+    additional_volumes: []
+
+    capabilities:
+      - NET_BIND_SERVICE
